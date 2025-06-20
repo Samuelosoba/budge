@@ -11,7 +11,7 @@ import {
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Plus, Eye, EyeOff, ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, TrendingDown, Calendar, Settings, CreditCard, BarChart3, RefreshCw } from 'lucide-react-native';
+import { Plus, Eye, EyeOff, ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, TrendingDown, Calendar, Settings, CreditCard, ChartBar as BarChart3, RefreshCw } from 'lucide-react-native';
 import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
