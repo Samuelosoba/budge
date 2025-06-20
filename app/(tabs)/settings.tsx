@@ -50,26 +50,28 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleUpdateBudget = async () => {
-    const budget = parseFloat(newBudget);
-    if (isNaN(budget) || budget <= 0) {
-      Alert.alert('Error', 'Please enter a valid budget amount');
-      return;
-    }
+const handleUpdateBudget = async () => {
+  const parsed = parseFloat(newBudget);
 
-    setIsUpdatingBudget(true);
-    
-    try {
-      await setMonthlyBudget(budget);
-      setBudgetModalVisible(false);
-      Alert.alert('Success', 'Monthly budget updated successfully');
-    } catch (error) {
-      console.error('Budget update error:', error);
-      Alert.alert('Error', 'Failed to update monthly budget. Please try again.');
-    } finally {
-      setIsUpdatingBudget(false);
-    }
-  };
+  if (!newBudget || isNaN(parsed) || parsed <= 0) {
+    Alert.alert('Invalid Budget', 'Please enter a valid number greater than zero.');
+    return;
+  }
+
+  setIsUpdatingBudget(true);
+
+  try {
+    await setMonthlyBudget(parsed);
+    setBudgetModalVisible(false);
+    Alert.alert('Success', 'Monthly budget updated successfully');
+  } catch (error) {
+    console.error('Budget update error:', error);
+    Alert.alert('Error', 'Failed to update monthly budget. Please try again.');
+  } finally {
+    setIsUpdatingBudget(false);
+  }
+};
+
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
