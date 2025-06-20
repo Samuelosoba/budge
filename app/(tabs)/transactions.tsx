@@ -12,7 +12,7 @@ import {
 import { useBudget, Transaction } from '@/contexts/BudgetContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import CategoryModal from '@/components/CategoryModal';
-import { Plus, Search, TrendingUp, TrendingDown, Edit, Trash2, Calendar, DollarSign, FileText, Settings } from 'lucide-react-native';
+import { Plus, Search, TrendingUp, TrendingDown, CreditCard as Edit, Trash2, Calendar, DollarSign, FileText, Settings } from 'lucide-react-native';
 
 export default function TransactionsScreen() {
   const { 
