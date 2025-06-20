@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
@@ -43,14 +42,21 @@ export default function LoginScreen() {
   const styles = createStyles(theme, isDark);
 
   return (
-    <LinearGradient
-      colors={isDark ? ['#1A1A1A', '#262626', '#333333'] : ['#10B981', '#059669', '#047857']}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardContainer}
       >
+        {/* Status Bar */}
+        <View style={styles.statusBar}>
+          <Text style={styles.time}>9:41</Text>
+          <View style={styles.statusIcons}>
+            <View style={styles.signalIcon} />
+            <View style={styles.wifiIcon} />
+            <View style={styles.batteryIcon} />
+          </View>
+        </View>
+
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={styles.title}>Welcome to Budge</Text>
@@ -58,7 +64,7 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.form}>
-            <View style={[styles.inputContainer, { backgroundColor: theme.card }]}>
+            <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <Mail size={20} color={theme.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.text }]}
@@ -72,7 +78,7 @@ export default function LoginScreen() {
               />
             </View>
 
-            <View style={[styles.inputContainer, { backgroundColor: theme.card }]}>
+            <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <Lock size={20} color={theme.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, styles.passwordInput, { color: theme.text }]}
@@ -97,34 +103,75 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              style={[styles.loginButton, isLoading && styles.disabledButton]}
+              style={[
+                styles.loginButton, 
+                { backgroundColor: theme.primary },
+                isLoading && styles.disabledButton
+              ]}
               onPress={handleLogin}
               disabled={isLoading}
             >
-              <Text style={styles.loginButtonText}>
+              <Text style={[styles.loginButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Don't have an account? </Text>
+              <Text style={[styles.footerText, { color: theme.textSecondary }]}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-                <Text style={styles.signUpText}>Sign Up</Text>
+                <Text style={[styles.signUpText, { color: theme.primary }]}>Sign Up</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.background,
   },
   keyboardContainer: {
     flex: 1,
+  },
+  statusBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 10,
+  },
+  time: {
+    fontSize: 17,
+    fontFamily: 'Inter-Bold',
+    color: theme.text,
+  },
+  statusIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  signalIcon: {
+    width: 18,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  wifiIcon: {
+    width: 15,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  batteryIcon: {
+    width: 24,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
   },
   content: {
     flex: 1,
@@ -138,13 +185,13 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   title: {
     fontSize: 32,
     fontFamily: 'Inter-Bold',
-    color: 'white',
+    color: theme.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: theme.textSecondary,
     textAlign: 'center',
   },
   form: {
@@ -161,6 +208,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
   },
   inputIcon: {
     marginRight: 12,
@@ -180,13 +228,15 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     padding: 4,
   },
   loginButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   disabledButton: {
     opacity: 0.6,
@@ -194,7 +244,6 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   loginButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: 'white',
   },
   footer: {
     flexDirection: 'row',
@@ -205,11 +254,9 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   footerText: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: 'rgba(255, 255, 255, 0.8)',
   },
   signUpText: {
     fontSize: 14,
     fontFamily: 'Inter-Bold',
-    color: 'white',
   },
 });
