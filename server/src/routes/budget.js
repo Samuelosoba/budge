@@ -23,13 +23,11 @@ router.get('/', auth, async (req, res) => {
 // Update monthly budget
 router.put('/monthly', auth, [
   body('monthlyBudget')
-    .notEmpty()
+    .exists()
     .withMessage('Monthly budget is required')
-    .isNumeric()
-    .withMessage('Monthly budget must be a number')
-    .toFloat()
     .isFloat({ min: 0 })
     .withMessage('Monthly budget must be a positive number')
+    .toFloat()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
