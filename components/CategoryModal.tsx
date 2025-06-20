@@ -88,6 +88,13 @@ export default function CategoryModal({ visible, onClose, type, editingCategory 
         await addCategory(categoryData);
       }
       
+      // Reset form and close modal
+      setFormData({
+        name: '',
+        color: predefinedColors[0],
+        budget: '',
+        icon: 'folder',
+      });
       onClose();
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save category');

@@ -12,7 +12,7 @@ import {
 import { useBudget, Transaction } from '@/contexts/BudgetContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import CategoryModal from '@/components/CategoryModal';
-import { Plus, Search, TrendingUp, TrendingDown, CreditCard as Edit, Trash2, Calendar, DollarSign, FileText, Settings } from 'lucide-react-native';
+import { Plus, Search, TrendingUp, TrendingDown, Edit, Trash2, Calendar, DollarSign, FileText, Settings } from 'lucide-react-native';
 
 export default function TransactionsScreen() {
   const { 
@@ -166,7 +166,7 @@ export default function TransactionsScreen() {
             style={styles.headerButton}
             onPress={() => openCategoryModal('expense')}
           >
-            <Settings size={20} color={theme.text} />
+            <Settings size={20} color={theme.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -485,9 +485,9 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     color: theme.text,
   },
   headerButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: theme.surface,
     justifyContent: 'center',
     alignItems: 'center',
@@ -616,7 +616,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   },
   floatingButton: {
     position: 'absolute',
-    bottom: 100, // Above the tab bar
+    bottom: 120, // Above the tab bar
     right: 20,
     width: 56,
     height: 56,
