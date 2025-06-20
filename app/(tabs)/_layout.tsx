@@ -6,7 +6,7 @@ import { View, Text, StyleSheet } from 'react-native';
 
 export default function TabLayout() {
   const { user, isLoading } = useAuth();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
 
   if (isLoading) {
     return (
@@ -28,8 +28,8 @@ export default function TabLayout() {
         tabBarInactiveTintColor: theme.tabBarInactive,
         tabBarStyle: {
           backgroundColor: theme.tabBar,
-          borderTopWidth: 1,
-          borderTopColor: theme.border,
+          borderTopWidth: isDark ? 0 : 1, // Remove white line in dark mode
+          borderTopColor: isDark ? 'transparent' : theme.border,
           paddingTop: 16,
           paddingBottom: 40, // Increased padding for mobile navigation
           height: 100, // Increased height for mobile

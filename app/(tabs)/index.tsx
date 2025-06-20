@@ -7,22 +7,27 @@ import {
   TouchableOpacity,
   Dimensions,
   RefreshControl,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Eye, EyeOff, ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, TrendingDown, Calendar, Settings } from 'lucide-react-native';
+import { Eye, EyeOff, ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, TrendingDown, Calendar, Settings, Target, DollarSign } from 'lucide-react-native';
 import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
-  const { state, getTotalIncome, getTotalExpenses, getBalance, refreshData } = useBudget();
+  const { state, getTotalIncome, getTotalExpenses, getBalance, refreshData, setMonthlyBudget } = useBudget();
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const [hideBalances, setHideBalances] = useState(false);
   const [selectedOverview, setSelectedOverview] = useState<'income' | 'expense'>('expense');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [budgetModalVisible, setBudgetModalVisible] = useState(false);
+  const [newBudget, setNewBudget] = useState(state.monthlyBudget.toString());
 
   const totalIncome = getTotalIncome();
   const totalExpenses = getTotalExpenses();
@@ -54,6 +59,22 @@ export default function DashboardScreen() {
       console.error('Error refreshing data:', error);
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const handleUpdateBudget = async () => {
+    const budget = parseFloat(newBudget);
+    if (isNaN(budget) || budget <= 0) {
+      Alert.alert('Error', 'Please enter a valid budget amount');
+      return;
+    }
+    
+    try {
+      await setMonthlyBudget(budget);
+      setBudgetModalVisible(false);
+      Alert.alert('Success', 'Monthly budget updated successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update budget');
     }
   };
 
@@ -121,10 +142,12 @@ export default function DashboardScreen() {
         {/* Total Balance Card */}
         <View style={[styles.balanceCard, { backgroundColor: theme.balanceCard }]}>
           <View style={styles.balanceHeader}>
-            <Text style={styles.balanceLabel}>Total Balance</Text>
-            <Wallet size={24} color={theme.balanceText} />
+            <Text style={[styles.balanceLabel, { color: isDark ? theme.textSecondary : theme.balanceText }]}>Total Balance</Text>
+            <Wallet size={24} color={isDark ? theme.primary : theme.balanceText} />
           </View>
-          <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
+          <Text style={[styles.balanceAmount, { color: isDark ? theme.primary : theme.balanceText }]}>
+            {formatCurrency(balance)}
+          </Text>
           
           <View style={styles.balanceStats}>
             <View style={styles.statItem}>
@@ -132,8 +155,10 @@ export default function DashboardScreen() {
                 <ArrowUpRight size={16} color="#10B981" />
               </View>
               <View>
-                <Text style={styles.statAmount}>{formatCurrency(totalIncome)}</Text>
-                <Text style={styles.statLabel}>Income</Text>
+                <Text style={[styles.statAmount, { color: isDark ? theme.text : theme.balanceText }]}>
+                  {formatCurrency(totalIncome)}
+                </Text>
+                <Text style={[styles.statLabel, { color: isDark ? theme.textSecondary : theme.balanceText }]}>Income</Text>
               </View>
             </View>
             
@@ -144,9 +169,54 @@ export default function DashboardScreen() {
                 <ArrowDownRight size={16} color="#EF4444" />
               </View>
               <View>
-                <Text style={styles.statAmount}>{formatCurrency(totalExpenses)}</Text>
-                <Text style={styles.statLabel}>Expenses</Text>
+                <Text style={[styles.statAmount, { color: isDark ? theme.text : theme.balanceText }]}>
+                  {formatCurrency(totalExpenses)}
+                </Text>
+                <Text style={[styles.statLabel, { color: isDark ? theme.textSecondary : theme.balanceText }]}>Expenses</Text>
               </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Budget Overview */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Budget Overview</Text>
+            <TouchableOpacity 
+              style={[styles.budgetButton, { backgroundColor: theme.primary }]}
+              onPress={() => setBudgetModalVisible(true)}
+            >
+              <Target size={16} color={isDark ? '#1A1A1A' : 'white'} />
+              <Text style={[styles.budgetButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
+                Set Budget
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={[styles.budgetCard, { backgroundColor: theme.card }]}>
+            <View style={styles.budgetHeader}>
+              <Text style={[styles.budgetTitle, { color: theme.text }]}>Monthly Budget</Text>
+              <Text style={[styles.budgetAmount, { color: theme.primary }]}>
+                {formatCurrency(state.monthlyBudget)}
+              </Text>
+            </View>
+            
+            <View style={styles.budgetProgress}>
+              <View style={[styles.budgetProgressBar, { backgroundColor: theme.border }]}>
+                <View
+                  style={[
+                    styles.budgetProgressFill,
+                    {
+                      width: `${Math.min(budgetUsed, 100)}%`,
+                      backgroundColor: budgetUsed > 90 ? '#EF4444' : 
+                                     budgetUsed > 75 ? '#F59E0B' : theme.primary,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={[styles.budgetProgressText, { color: theme.textSecondary }]}>
+                {formatCurrency(totalExpenses)} of {formatCurrency(state.monthlyBudget)} used ({budgetUsed.toFixed(0)}%)
+              </Text>
             </View>
           </View>
         </View>
@@ -155,44 +225,45 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Financial Overview</Text>
-            <View style={styles.overviewToggle}>
-              <TouchableOpacity
-                style={[
-                  styles.toggleButton,
-                  { 
-                    backgroundColor: selectedOverview === 'income' ? '#10B981' : theme.surface,
-                    borderColor: selectedOverview === 'income' ? '#10B981' : theme.border,
-                  }
-                ]}
-                onPress={() => setSelectedOverview('income')}
-              >
-                <TrendingUp size={16} color={selectedOverview === 'income' ? 'white' : '#10B981'} />
-                <Text style={[
-                  styles.toggleButtonText,
-                  { color: selectedOverview === 'income' ? 'white' : theme.textSecondary }
-                ]}>
-                  Income
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.toggleButton,
-                  { 
-                    backgroundColor: selectedOverview === 'expense' ? '#EF4444' : theme.surface,
-                    borderColor: selectedOverview === 'expense' ? '#EF4444' : theme.border,
-                  }
-                ]}
-                onPress={() => setSelectedOverview('expense')}
-              >
-                <TrendingDown size={16} color={selectedOverview === 'expense' ? 'white' : '#EF4444'} />
-                <Text style={[
-                  styles.toggleButtonText,
-                  { color: selectedOverview === 'expense' ? 'white' : theme.textSecondary }
-                ]}>
-                  Expenses
-                </Text>
-              </TouchableOpacity>
-            </View>
+          </View>
+          
+          <View style={styles.overviewToggle}>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                { 
+                  backgroundColor: selectedOverview === 'income' ? '#10B981' : theme.surface,
+                  borderColor: selectedOverview === 'income' ? '#10B981' : theme.border,
+                }
+              ]}
+              onPress={() => setSelectedOverview('income')}
+            >
+              <TrendingUp size={16} color={selectedOverview === 'income' ? 'white' : '#10B981'} />
+              <Text style={[
+                styles.toggleButtonText,
+                { color: selectedOverview === 'income' ? 'white' : theme.textSecondary }
+              ]}>
+                Income
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                { 
+                  backgroundColor: selectedOverview === 'expense' ? '#EF4444' : theme.surface,
+                  borderColor: selectedOverview === 'expense' ? '#EF4444' : theme.border,
+                }
+              ]}
+              onPress={() => setSelectedOverview('expense')}
+            >
+              <TrendingDown size={16} color={selectedOverview === 'expense' ? 'white' : '#EF4444'} />
+              <Text style={[
+                styles.toggleButtonText,
+                { color: selectedOverview === 'expense' ? 'white' : theme.textSecondary }
+              ]}>
+                Expenses
+              </Text>
+            </TouchableOpacity>
           </View>
           
           <View style={[styles.overviewCard, { backgroundColor: theme.card }]}>
@@ -323,6 +394,47 @@ export default function DashboardScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Budget Modal */}
+      <Modal
+        visible={budgetModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <TouchableOpacity onPress={() => setBudgetModalVisible(false)}>
+              <Text style={[styles.modalCancelButton, { color: theme.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Monthly Budget</Text>
+            <TouchableOpacity onPress={handleUpdateBudget}>
+              <Text style={[styles.modalSaveButton, { color: theme.primary }]}>Save</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.modalContent}>
+            <Text style={[styles.modalDescription, { color: theme.textSecondary }]}>
+              Set your monthly budget to track your spending and get personalized insights.
+            </Text>
+            
+            <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <DollarSign size={20} color={theme.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="0.00"
+                value={newBudget}
+                onChangeText={setNewBudget}
+                keyboardType="numeric"
+                placeholderTextColor={theme.textTertiary}
+              />
+            </View>
+            
+            <Text style={[styles.inputHint, { color: theme.textTertiary }]}>
+              Your current budget is {formatCurrency(state.monthlyBudget)}
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -386,13 +498,11 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   balanceLabel: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: theme.balanceText,
     opacity: 0.8,
   },
   balanceAmount: {
     fontSize: 36,
     fontFamily: 'Inter-Bold',
-    color: theme.balanceText,
     marginBottom: 24,
   },
   balanceStats: {
@@ -416,13 +526,11 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   statAmount: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: theme.balanceText,
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: theme.balanceText,
     opacity: 0.7,
   },
   statDivider: {
@@ -449,9 +557,61 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
   },
+  budgetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  budgetButtonText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+  },
+  budgetCard: {
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  budgetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  budgetTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+  budgetAmount: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+  },
+  budgetProgress: {
+    gap: 8,
+  },
+  budgetProgressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  budgetProgressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  budgetProgressText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+  },
   overviewToggle: {
     flexDirection: 'row',
     gap: 8,
+    marginBottom: 16,
   },
   toggleButton: {
     flexDirection: 'row',
@@ -570,5 +730,59 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 24,
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 24,
+    borderBottomWidth: 1,
+  },
+  modalCancelButton: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+  },
+  modalSaveButton: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+  },
+  modalContent: {
+    padding: 24,
+  },
+  modalDescription: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    paddingVertical: 16,
+  },
+  inputHint: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
   },
 });

@@ -98,9 +98,9 @@ const darkTheme: ThemeColors = {
   textSecondary: '#B3B3B3',
   textTertiary: '#808080',
   
-  primary: '#8B6914', // Much darker gold accent for dark mode
-  primaryLight: '#A0751A',
-  primaryDark: '#6B5010',
+  primary: '#D4AF37', // Bright gold for dark mode - much more prominent
+  primaryLight: '#F4D03F',
+  primaryDark: '#B7950B',
   
   success: '#10B981',
   warning: '#F59E0B',
@@ -111,19 +111,19 @@ const darkTheme: ThemeColors = {
   card: '#1A1A1A',
   
   tabBar: '#1A1A1A',
-  tabBarActive: '#8B6914',
+  tabBarActive: '#D4AF37', // Bright gold for active tab
   tabBarInactive: '#808080',
   
-  // Exact design elements for dark mode
-  balanceCard: '#1A1A1A', // Dark card
-  balanceText: '#FFFFFF',
-  circleButton: '#8B6914', // Much darker gold accent
+  // Exact design elements for dark mode with prominent gold
+  balanceCard: 'linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%)', // Gradient dark card
+  balanceText: '#D4AF37', // Gold text for balance
+  circleButton: '#D4AF37', // Bright gold accent
   circleButtonSecondary: '#404040',
-  pillButton: '#8B6914',
+  pillButton: '#D4AF37',
   pillButtonText: '#1A1A1A',
   transactionRow: 'rgba(26, 26, 26, 0.95)',
   statusBarBg: '#0F0F0F',
-  goldAccent: '#8B6914', // Much darker gold
+  goldAccent: '#D4AF37', // Bright gold
   navyBlue: '#2C3E50',
   lightCream: '#F5F5F0',
 };
