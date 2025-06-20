@@ -47,16 +47,6 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardContainer}
       >
-        {/* Status Bar */}
-        <View style={styles.statusBar}>
-          <Text style={styles.time}>9:41</Text>
-          <View style={styles.statusIcons}>
-            <View style={styles.signalIcon} />
-            <View style={styles.wifiIcon} />
-            <View style={styles.batteryIcon} />
-          </View>
-        </View>
-
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={styles.title}>Welcome to Budge</Text>
@@ -137,46 +127,11 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   keyboardContainer: {
     flex: 1,
   },
-  statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 10,
-  },
-  time: {
-    fontSize: 17,
-    fontFamily: 'Inter-Bold',
-    color: theme.text,
-  },
-  statusIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  signalIcon: {
-    width: 18,
-    height: 12,
-    backgroundColor: theme.text,
-    borderRadius: 2,
-  },
-  wifiIcon: {
-    width: 15,
-    height: 12,
-    backgroundColor: theme.text,
-    borderRadius: 2,
-  },
-  batteryIcon: {
-    width: 24,
-    height: 12,
-    backgroundColor: theme.text,
-    borderRadius: 2,
-  },
   content: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingTop: 60, // Safe area padding
   },
   header: {
     alignItems: 'center',

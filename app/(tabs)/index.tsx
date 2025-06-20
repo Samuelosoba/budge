@@ -42,16 +42,6 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Status Bar */}
-        <View style={styles.statusBar}>
-          <Text style={styles.time}>9:41</Text>
-          <View style={styles.statusIcons}>
-            <View style={styles.signalIcon} />
-            <View style={styles.wifiIcon} />
-            <View style={styles.batteryIcon} />
-          </View>
-        </View>
-
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Balance Overview</Text>
@@ -190,48 +180,13 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   scrollContent: {
     paddingBottom: 120, // Extra padding for mobile navigation
   },
-  statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 10,
-  },
-  time: {
-    fontSize: 17,
-    fontFamily: 'Inter-Bold',
-    color: theme.text,
-  },
-  statusIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  signalIcon: {
-    width: 18,
-    height: 12,
-    backgroundColor: theme.text,
-    borderRadius: 2,
-  },
-  wifiIcon: {
-    width: 15,
-    height: 12,
-    backgroundColor: theme.text,
-    borderRadius: 2,
-  },
-  batteryIcon: {
-    width: 24,
-    height: 12,
-    backgroundColor: theme.text,
-    borderRadius: 2,
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingTop: 60, // Safe area padding
+    paddingBottom: 20,
   },
   headerTitle: {
     fontSize: 24,
