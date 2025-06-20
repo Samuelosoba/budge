@@ -10,7 +10,7 @@ import {
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Plus, MoreHorizontal, Eye, EyeOff } from 'lucide-react-native';
+import { Plus, MoveHorizontal as MoreHorizontal, Eye, EyeOff } from 'lucide-react-native';
 import { useState } from 'react';
 
 const { width } = Dimensions.get('window');
