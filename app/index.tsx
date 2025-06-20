@@ -1,14 +1,16 @@
 import { Redirect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function Index() {
   const { user, isLoading } = useAuth();
+  const { theme } = useTheme();
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.loadingText, { color: theme.text }]}>Loading...</Text>
       </View>
     );
   }
@@ -25,11 +27,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
   },
   loadingText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
   },
 });

@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useBudget, Transaction } from '@/contexts/BudgetContext';
-import { Plus, Search, Filter, TrendingUp, TrendingDown, Edit, Trash2, Calendar, DollarSign, Tag, FileText } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import CategoryModal from '@/components/CategoryModal';
+import { Plus, Search, Filter, TrendingUp, TrendingDown, Edit, Trash2, Calendar, DollarSign, Tag, FileText, Settings } from 'lucide-react-native';
 
 export default function TransactionsScreen() {
   const { 
@@ -20,10 +22,13 @@ export default function TransactionsScreen() {
     updateTransaction, 
     deleteTransaction 
   } = useBudget();
+  const { theme, isDark } = useTheme();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<'all' | 'income' | 'expense'>('all');
   const [modalVisible, setModalVisible] = useState(false);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [categoryModalType, setCategoryModalType] = useState<'income' | 'expense'>('expense');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   
   // Form state
@@ -68,6 +73,11 @@ export default function TransactionsScreen() {
       });
     }
     setModalVisible(true);
+  };
+
+  const openCategoryModal = (type: 'income' | 'expense') => {
+    setCategoryModalType(type);
+    setCategoryModalVisible(true);
   };
 
   const handleSave = async () => {
@@ -145,32 +155,42 @@ export default function TransactionsScreen() {
     return state.categories.filter(cat => cat.type === type);
   };
 
+  const styles = createStyles(theme);
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient
-        colors={['#10B981', '#059669']}
+        colors={isDark ? ['#1A1A1A', '#262626'] : ['#10B981', '#059669']}
         style={styles.header}
       >
         <Text style={styles.headerTitle}>Transactions</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => openModal()}
-        >
-          <Plus size={24} color="white" />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => openCategoryModal('expense')}
+          >
+            <Settings size={20} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => openModal()}
+          >
+            <Plus size={24} color="white" />
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {/* Search and Filter */}
       <View style={styles.searchSection}>
-        <View style={styles.searchContainer}>
-          <Search size={20} color="#6B7280" style={styles.searchIcon} />
+        <View style={[styles.searchContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Search size={20} color={theme.textSecondary} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.text }]}
             placeholder="Search transactions..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={theme.textTertiary}
           />
         </View>
         
@@ -184,14 +204,19 @@ export default function TransactionsScreen() {
               key={filter.key}
               style={[
                 styles.filterButton,
-                selectedType === filter.key && styles.activeFilterButton,
+                { 
+                  backgroundColor: selectedType === filter.key ? theme.primary : theme.surface,
+                  borderColor: selectedType === filter.key ? theme.primary : theme.border,
+                }
               ]}
               onPress={() => setSelectedType(filter.key as any)}
             >
               <Text
                 style={[
                   styles.filterButtonText,
-                  selectedType === filter.key && styles.activeFilterButtonText,
+                  { 
+                    color: selectedType === filter.key ? 'white' : theme.textSecondary 
+                  }
                 ]}
               >
                 {filter.label}
@@ -205,11 +230,11 @@ export default function TransactionsScreen() {
       <ScrollView style={styles.transactionsList} showsVerticalScrollIndicator={false}>
         {state.isLoading ? (
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading transactions...</Text>
+            <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading transactions...</Text>
           </View>
         ) : filteredTransactions.length > 0 ? (
           filteredTransactions.map((transaction) => (
-            <View key={transaction.id} style={styles.transactionItem}>
+            <View key={transaction.id} style={[styles.transactionItem, { backgroundColor: theme.card }]}>
               <View style={styles.transactionLeft}>
                 <View style={[
                   styles.transactionIcon,
@@ -222,9 +247,9 @@ export default function TransactionsScreen() {
                   )}
                 </View>
                 <View style={styles.transactionDetails}>
-                  <Text style={styles.transactionDescription}>{transaction.description}</Text>
-                  <Text style={styles.transactionCategory}>{transaction.category.name}</Text>
-                  <Text style={styles.transactionDate}>
+                  <Text style={[styles.transactionDescription, { color: theme.text }]}>{transaction.description}</Text>
+                  <Text style={[styles.transactionCategory, { color: theme.textSecondary }]}>{transaction.category.name}</Text>
+                  <Text style={[styles.transactionDate, { color: theme.textTertiary }]}>
                     {new Date(transaction.date).toLocaleDateString()}
                   </Text>
                 </View>
@@ -241,13 +266,13 @@ export default function TransactionsScreen() {
                 </Text>
                 <View style={styles.transactionActions}>
                   <TouchableOpacity
-                    style={styles.actionButton}
+                    style={[styles.actionButton, { backgroundColor: theme.surface }]}
                     onPress={() => openModal(transaction)}
                   >
-                    <Edit size={16} color="#6B7280" />
+                    <Edit size={16} color={theme.textSecondary} />
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={styles.actionButton}
+                    style={[styles.actionButton, { backgroundColor: theme.surface }]}
                     onPress={() => handleDelete(transaction.id)}
                   >
                     <Trash2 size={16} color="#EF4444" />
@@ -258,8 +283,8 @@ export default function TransactionsScreen() {
           ))
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No transactions found</Text>
-            <Text style={styles.emptyStateSubtext}>
+            <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>No transactions found</Text>
+            <Text style={[styles.emptyStateSubtext, { color: theme.textTertiary }]}>
               {searchQuery || selectedType !== 'all' 
                 ? 'Try adjusting your search or filters'
                 : 'Add your first transaction to get started'
@@ -275,35 +300,38 @@ export default function TransactionsScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles.modalCancelButton}>Cancel</Text>
+              <Text style={[styles.modalCancelButton, { color: theme.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
               {editingTransaction ? 'Edit Transaction' : 'Add Transaction'}
             </Text>
             <TouchableOpacity onPress={handleSave}>
-              <Text style={styles.modalSaveButton}>Save</Text>
+              <Text style={[styles.modalSaveButton, { color: theme.primary }]}>Save</Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.modalContent}>
             {/* Type Selection */}
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Type</Text>
+              <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
               <View style={styles.typeButtons}>
                 <TouchableOpacity
                   style={[
                     styles.typeButton,
-                    formData.type === 'income' && styles.activeTypeButton,
+                    { 
+                      backgroundColor: formData.type === 'income' ? '#10B981' : theme.surface,
+                      borderColor: formData.type === 'income' ? '#10B981' : theme.border,
+                    }
                   ]}
                   onPress={() => setFormData({ ...formData, type: 'income', category: '' })}
                 >
                   <TrendingUp size={20} color={formData.type === 'income' ? 'white' : '#10B981'} />
                   <Text style={[
                     styles.typeButtonText,
-                    formData.type === 'income' && styles.activeTypeButtonText,
+                    { color: formData.type === 'income' ? 'white' : theme.textSecondary }
                   ]}>
                     Income
                   </Text>
@@ -311,14 +339,17 @@ export default function TransactionsScreen() {
                 <TouchableOpacity
                   style={[
                     styles.typeButton,
-                    formData.type === 'expense' && styles.activeTypeButton,
+                    { 
+                      backgroundColor: formData.type === 'expense' ? '#EF4444' : theme.surface,
+                      borderColor: formData.type === 'expense' ? '#EF4444' : theme.border,
+                    }
                   ]}
                   onPress={() => setFormData({ ...formData, type: 'expense', category: '' })}
                 >
                   <TrendingDown size={20} color={formData.type === 'expense' ? 'white' : '#EF4444'} />
                   <Text style={[
                     styles.typeButtonText,
-                    formData.type === 'expense' && styles.activeTypeButtonText,
+                    { color: formData.type === 'expense' ? 'white' : theme.textSecondary }
                   ]}>
                     Expense
                   </Text>
@@ -328,45 +359,57 @@ export default function TransactionsScreen() {
 
             {/* Amount */}
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Amount</Text>
-              <View style={styles.inputContainer}>
-                <DollarSign size={20} color="#6B7280" style={styles.inputIcon} />
+              <Text style={[styles.formLabel, { color: theme.text }]}>Amount</Text>
+              <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <DollarSign size={20} color={theme.textSecondary} style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="0.00"
                   value={formData.amount}
                   onChangeText={(text) => setFormData({ ...formData, amount: text })}
                   keyboardType="numeric"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={theme.textTertiary}
                 />
               </View>
             </View>
 
             {/* Description */}
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Description</Text>
-              <View style={styles.inputContainer}>
-                <FileText size={20} color="#6B7280" style={styles.inputIcon} />
+              <Text style={[styles.formLabel, { color: theme.text }]}>Description</Text>
+              <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <FileText size={20} color={theme.textSecondary} style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="What was this for?"
                   value={formData.description}
                   onChangeText={(text) => setFormData({ ...formData, description: text })}
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={theme.textTertiary}
                 />
               </View>
             </View>
 
             {/* Category */}
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Category</Text>
+              <View style={styles.categoryHeader}>
+                <Text style={[styles.formLabel, { color: theme.text }]}>Category</Text>
+                <TouchableOpacity
+                  style={[styles.addCategoryButton, { backgroundColor: theme.primary }]}
+                  onPress={() => openCategoryModal(formData.type)}
+                >
+                  <Plus size={16} color="white" />
+                  <Text style={styles.addCategoryButtonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
               <View style={styles.categoriesGrid}>
                 {getCategories(formData.type).map((category) => (
                   <TouchableOpacity
                     key={category.id}
                     style={[
                       styles.categoryButton,
-                      formData.category === category.id && styles.activeCategoryButton,
+                      { 
+                        backgroundColor: formData.category === category.id ? theme.primary : theme.surface,
+                        borderColor: formData.category === category.id ? theme.primary : theme.border,
+                      }
                     ]}
                     onPress={() => setFormData({ ...formData, category: category.id })}
                   >
@@ -375,7 +418,7 @@ export default function TransactionsScreen() {
                     />
                     <Text style={[
                       styles.categoryButtonText,
-                      formData.category === category.id && styles.activeCategoryButtonText,
+                      { color: formData.category === category.id ? 'white' : theme.textSecondary }
                     ]}>
                       {category.name}
                     </Text>
@@ -386,30 +429,30 @@ export default function TransactionsScreen() {
 
             {/* Date */}
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Date</Text>
-              <View style={styles.inputContainer}>
-                <Calendar size={20} color="#6B7280" style={styles.inputIcon} />
+              <Text style={[styles.formLabel, { color: theme.text }]}>Date</Text>
+              <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <Calendar size={20} color={theme.textSecondary} style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="YYYY-MM-DD"
                   value={formData.date}
                   onChangeText={(text) => setFormData({ ...formData, date: text })}
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={theme.textTertiary}
                 />
               </View>
             </View>
 
             {/* Notes */}
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Notes (Optional)</Text>
-              <View style={styles.inputContainer}>
-                <FileText size={20} color="#6B7280" style={styles.inputIcon} />
+              <Text style={[styles.formLabel, { color: theme.text }]}>Notes (Optional)</Text>
+              <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <FileText size={20} color={theme.textSecondary} style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="Additional notes..."
                   value={formData.notes}
                   onChangeText={(text) => setFormData({ ...formData, notes: text })}
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={theme.textTertiary}
                   multiline
                 />
               </View>
@@ -417,14 +460,21 @@ export default function TransactionsScreen() {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* Category Modal */}
+      <CategoryModal
+        visible={categoryModalVisible}
+        onClose={() => setCategoryModalVisible(false)}
+        type={categoryModalType}
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.background,
   },
   header: {
     paddingTop: 60,
@@ -438,6 +488,18 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontFamily: 'Inter-Bold',
     color: 'white',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addButton: {
     width: 44,
@@ -454,7 +516,6 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 12,
     paddingHorizontal: 16,
     marginBottom: 16,
@@ -463,6 +524,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: 1,
   },
   searchIcon: {
     marginRight: 12,
@@ -471,7 +533,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#1F2937',
     paddingVertical: 16,
   },
   filterButtons: {
@@ -482,21 +543,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  activeFilterButton: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
   },
   filterButtonText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
-  },
-  activeFilterButtonText: {
-    color: 'white',
   },
   transactionsList: {
     flex: 1,
@@ -509,10 +560,8 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
   },
   transactionItem: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -534,7 +583,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -545,19 +593,16 @@ const styles = StyleSheet.create({
   transactionDescription: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#1F2937',
     marginBottom: 2,
   },
   transactionCategory: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#6B7280',
     marginBottom: 2,
   },
   transactionDate: {
     fontSize: 12,
     fontFamily: 'Inter-Regular',
-    color: '#9CA3AF',
   },
   transactionRight: {
     alignItems: 'flex-end',
@@ -574,7 +619,6 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#F9FAFB',
   },
   emptyState: {
     alignItems: 'center',
@@ -583,18 +627,15 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: '#6B7280',
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#9CA3AF',
     textAlign: 'center',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -603,24 +644,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 24,
-    backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   modalCancelButton: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#6B7280',
   },
   modalTitle: {
     fontSize: 18,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
   },
   modalSaveButton: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: '#10B981',
   },
   modalContent: {
     flex: 1,
@@ -633,8 +669,26 @@ const styles = StyleSheet.create({
   formLabel: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#1F2937',
     marginBottom: 12,
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addCategoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  addCategoryButtonText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: 'white',
   },
   typeButtons: {
     flexDirection: 'row',
@@ -648,31 +702,19 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: 'white',
     borderWidth: 2,
-    borderColor: '#E5E7EB',
-  },
-  activeTypeButton: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
   },
   typeButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#6B7280',
     marginLeft: 8,
-  },
-  activeTypeButtonText: {
-    color: 'white',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   inputIcon: {
     marginRight: 12,
@@ -681,7 +723,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#1F2937',
     paddingVertical: 16,
   },
   categoriesGrid: {
@@ -695,14 +736,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 20,
-    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     marginBottom: 8,
-  },
-  activeCategoryButton: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
   },
   categoryColor: {
     width: 12,
@@ -713,9 +748,5 @@ const styles = StyleSheet.create({
   categoryButtonText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
-  },
-  activeCategoryButtonText: {
-    color: 'white',
   },
 });

@@ -13,13 +13,18 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBudget } from '@/contexts/BudgetContext';
-import { User, Crown, Bell, Lock, Palette, CreditCard, CircleHelp as HelpCircle, LogOut, Settings as SettingsIcon, Target, Smartphone, Shield, Mail, ChevronRight, DollarSign } from 'lucide-react-native';
+import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
+import CategoryModal from '@/components/CategoryModal';
+import { User, Crown, Bell, Lock, Palette, CreditCard, CircleHelp as HelpCircle, LogOut, Settings as SettingsIcon, Target, Smartphone, Shield, Mail, ChevronRight, DollarSign, Plus, Sun, Moon, Monitor } from 'lucide-react-native';
 
 export default function SettingsScreen() {
   const { user, signOut, upgradeToPro } = useAuth();
   const { state, setMonthlyBudget } = useBudget();
+  const { theme, themeMode, setThemeMode, isDark } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [budgetModalVisible, setBudgetModalVisible] = useState(false);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [newBudget, setNewBudget] = useState(state.monthlyBudget.toString());
 
   const handleSignOut = () => {
@@ -62,10 +67,32 @@ export default function SettingsScreen() {
     }).format(amount);
   };
 
+  const getThemeIcon = (mode: ThemeMode) => {
+    switch (mode) {
+      case 'light':
+        return <Sun size={20} color={theme.text} />;
+      case 'dark':
+        return <Moon size={20} color={theme.text} />;
+      case 'auto':
+        return <Monitor size={20} color={theme.text} />;
+    }
+  };
+
+  const getThemeLabel = (mode: ThemeMode) => {
+    switch (mode) {
+      case 'light':
+        return 'Light Mode';
+      case 'dark':
+        return 'Dark Mode';
+      case 'auto':
+        return 'System Default';
+    }
+  };
+
   const SettingsSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionContent}>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
+      <View style={[styles.sectionContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
         {children}
       </View>
     </View>
@@ -94,25 +121,27 @@ export default function SettingsScreen() {
       <View style={styles.settingsItemLeft}>
         {icon}
         <View style={styles.settingsItemText}>
-          <Text style={[styles.settingsItemTitle, disabled && styles.disabledText]}>
+          <Text style={[styles.settingsItemTitle, { color: theme.text }, disabled && styles.disabledText]}>
             {title}
           </Text>
           {subtitle && (
-            <Text style={[styles.settingsItemSubtitle, disabled && styles.disabledText]}>
+            <Text style={[styles.settingsItemSubtitle, { color: theme.textSecondary }, disabled && styles.disabledText]}>
               {subtitle}
             </Text>
           )}
         </View>
       </View>
-      {rightElement || <ChevronRight size={20} color="#9CA3AF" />}
+      {rightElement || <ChevronRight size={20} color={theme.textTertiary} />}
     </TouchableOpacity>
   );
+
+  const styles = createStyles(theme);
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient
-        colors={['#10B981', '#059669']}
+        colors={isDark ? ['#1A1A1A', '#262626'] : ['#10B981', '#059669']}
         style={styles.header}
       >
         <Text style={styles.headerTitle}>Settings</Text>
@@ -127,8 +156,8 @@ export default function SettingsScreen() {
                 <User size={32} color="white" />
               </View>
               <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{user?.name}</Text>
-                <Text style={styles.profileEmail}>{user?.email}</Text>
+                <Text style={[styles.profileName, { color: theme.text }]}>{user?.name}</Text>
+                <Text style={[styles.profileEmail, { color: theme.textSecondary }]}>{user?.email}</Text>
               </View>
               {user?.isPro && (
                 <View style={styles.proBadge}>
@@ -162,11 +191,25 @@ export default function SettingsScreen() {
           />
           
           <SettingsItem
-            icon={<DollarSign size={24} color="#10B981" />}
-            title="Categories"
-            subtitle="Manage spending categories"
-            onPress={() => Alert.alert('Coming Soon', 'Category management is coming soon!')}
-          
+            icon={<Plus size={24} color="#10B981" />}
+            title="Manage Categories"
+            subtitle="Add and edit spending categories"
+            onPress={() => setCategoryModalVisible(true)}
+          />
+        </SettingsSection>
+
+        {/* Appearance Settings */}
+        <SettingsSection title="Appearance">
+          <SettingsItem
+            icon={<Palette size={24} color="#EC4899" />}
+            title="Theme"
+            subtitle={getThemeLabel(themeMode)}
+            onPress={() => setThemeModalVisible(true)}
+            rightElement={
+              <View style={styles.themePreview}>
+                {getThemeIcon(themeMode)}
+              </View>
+            }
           />
         </SettingsSection>
 
@@ -194,8 +237,8 @@ export default function SettingsScreen() {
               <Switch
                 value={notifications}
                 onValueChange={setNotifications}
-                trackColor={{ false: '#E5E7EB', true: '#10B981' }}
-                thumbColor={notifications ? 'white' : '#9CA3AF'}
+                trackColor={{ false: theme.border, true: theme.primary }}
+                thumbColor={notifications ? 'white' : theme.textTertiary}
               />
             }
           />
@@ -210,13 +253,6 @@ export default function SettingsScreen() {
 
         {/* App Settings */}
         <SettingsSection title="App">
-          <SettingsItem
-            icon={<Palette size={24} color="#EC4899" />}
-            title="Appearance"
-            subtitle="Theme and display options"
-            onPress={() => Alert.alert('Coming Soon', 'Theme customization is coming soon!')}
-          />
-          
           <SettingsItem
             icon={<Smartphone size={24} color="#8B5CF6" />}
             title="App Version"
@@ -251,7 +287,7 @@ export default function SettingsScreen() {
 
         {/* Sign Out */}
         <View style={styles.section}>
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <TouchableOpacity style={[styles.signOutButton, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={handleSignOut}>
             <LogOut size={24} color="#EF4444" />
             <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -264,48 +300,116 @@ export default function SettingsScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
             <TouchableOpacity onPress={() => setBudgetModalVisible(false)}>
-              <Text style={styles.modalCancelButton}>Cancel</Text>
+              <Text style={[styles.modalCancelButton, { color: theme.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Monthly Budget</Text>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Monthly Budget</Text>
             <TouchableOpacity onPress={handleUpdateBudget}>
-              <Text style={styles.modalSaveButton}>Save</Text>
+              <Text style={[styles.modalSaveButton, { color: theme.primary }]}>Save</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.modalContent}>
-            <Text style={styles.modalDescription}>
+            <Text style={[styles.modalDescription, { color: theme.textSecondary }]}>
               Set your monthly budget to track your spending and get personalized insights.
             </Text>
             
-            <View style={styles.inputContainer}>
-              <DollarSign size={20} color="#6B7280" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <DollarSign size={20} color={theme.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text }]}
                 placeholder="0.00"
                 value={newBudget}
                 onChangeText={setNewBudget}
                 keyboardType="numeric"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.textTertiary}
               />
             </View>
             
-            <Text style={styles.inputHint}>
+            <Text style={[styles.inputHint, { color: theme.textTertiary }]}>
               Your current budget is {formatCurrency(state.monthlyBudget)}
             </Text>
           </View>
         </View>
       </Modal>
+
+      {/* Theme Selection Modal */}
+      <Modal
+        visible={themeModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setThemeModalVisible(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <TouchableOpacity onPress={() => setThemeModalVisible(false)}>
+              <Text style={[styles.modalCancelButton, { color: theme.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Choose Theme</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          <View style={styles.modalContent}>
+            <Text style={[styles.modalDescription, { color: theme.textSecondary }]}>
+              Select your preferred theme. Auto will follow your system settings.
+            </Text>
+            
+            <View style={styles.themeOptions}>
+              {(['light', 'dark', 'auto'] as ThemeMode[]).map((mode) => (
+                <TouchableOpacity
+                  key={mode}
+                  style={[
+                    styles.themeOption,
+                    { 
+                      backgroundColor: theme.surface,
+                      borderColor: themeMode === mode ? theme.primary : theme.border,
+                      borderWidth: themeMode === mode ? 2 : 1,
+                    }
+                  ]}
+                  onPress={() => {
+                    setThemeMode(mode);
+                    setThemeModalVisible(false);
+                  }}
+                >
+                  <View style={styles.themeOptionIcon}>
+                    {getThemeIcon(mode)}
+                  </View>
+                  <Text style={[styles.themeOptionTitle, { color: theme.text }]}>
+                    {getThemeLabel(mode)}
+                  </Text>
+                  <Text style={[styles.themeOptionDescription, { color: theme.textSecondary }]}>
+                    {mode === 'light' && 'Always use light theme'}
+                    {mode === 'dark' && 'Always use dark theme'}
+                    {mode === 'auto' && 'Follow system settings'}
+                  </Text>
+                  {themeMode === mode && (
+                    <View style={[styles.themeOptionCheck, { backgroundColor: theme.primary }]}>
+                      <Text style={styles.themeOptionCheckText}>✓</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Category Modal */}
+      <CategoryModal
+        visible={categoryModalVisible}
+        onClose={() => setCategoryModalVisible(false)}
+        type="expense"
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.background,
   },
   header: {
     paddingTop: 60,
@@ -327,11 +431,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
     marginBottom: 16,
   },
   sectionContent: {
-    backgroundColor: 'white',
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -339,6 +441,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: 1,
   },
   profileCard: {
     padding: 20,
@@ -363,13 +466,11 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 20,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
     marginBottom: 4,
   },
   profileEmail: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#6B7280',
   },
   proBadge: {
     flexDirection: 'row',
@@ -408,7 +509,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: 'transparent',
   },
   settingsItemLeft: {
     flexDirection: 'row',
@@ -422,13 +523,11 @@ const styles = StyleSheet.create({
   settingsItemTitle: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#1F2937',
     marginBottom: 2,
   },
   settingsItemSubtitle: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#6B7280',
   },
   disabledItem: {
     opacity: 0.5,
@@ -436,11 +535,13 @@ const styles = StyleSheet.create({
   disabledText: {
     color: '#9CA3AF',
   },
+  themePreview: {
+    padding: 8,
+  },
   signOutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
     borderRadius: 12,
     paddingVertical: 16,
     gap: 12,
@@ -449,6 +550,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: 1,
   },
   signOutText: {
     fontSize: 16,
@@ -457,7 +559,6 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -466,24 +567,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 24,
-    backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   modalCancelButton: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#6B7280',
   },
   modalTitle: {
     fontSize: 18,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
   },
   modalSaveButton: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: '#10B981',
   },
   modalContent: {
     padding: 24,
@@ -491,18 +587,15 @@ const styles = StyleSheet.create({
   modalDescription: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#6B7280',
     marginBottom: 24,
     lineHeight: 24,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     marginBottom: 12,
   },
   inputIcon: {
@@ -512,12 +605,45 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    color: '#1F2937',
     paddingVertical: 16,
   },
   inputHint: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#9CA3AF',
+  },
+  themeOptions: {
+    gap: 16,
+  },
+  themeOption: {
+    padding: 20,
+    borderRadius: 16,
+    position: 'relative',
+  },
+  themeOptionIcon: {
+    marginBottom: 12,
+  },
+  themeOptionTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    marginBottom: 4,
+  },
+  themeOptionDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+  },
+  themeOptionCheck: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  themeOptionCheckText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: 'white',
   },
 });

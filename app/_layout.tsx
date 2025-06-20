@@ -7,6 +7,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { ApiProvider } from '@/contexts/ApiContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { BudgetProvider } from '@/contexts/BudgetContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,17 +32,19 @@ export default function RootLayout() {
   }
 
   return (
-    <ApiProvider>
-      <AuthProvider>
-        <BudgetProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-          <StatusBar style="auto" />
-        </BudgetProvider>
-      </AuthProvider>
-    </ApiProvider>
+    <ThemeProvider>
+      <ApiProvider>
+        <AuthProvider>
+          <BudgetProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+            <StatusBar style="auto" />
+          </BudgetProvider>
+        </AuthProvider>
+      </ApiProvider>
+    </ThemeProvider>
   );
 }

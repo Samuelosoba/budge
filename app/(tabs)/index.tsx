@@ -10,6 +10,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { TrendingUp, TrendingDown, Eye, EyeOff, CreditCard, Target, Calendar, CircleAlert as AlertCircle } from 'lucide-react-native';
 import { useState } from 'react';
 
@@ -18,6 +19,7 @@ const { width } = Dimensions.get('window');
 export default function DashboardScreen() {
   const { state, getTotalIncome, getTotalExpenses, getBalance } = useBudget();
   const { user } = useAuth();
+  const { theme, isDark } = useTheme();
   const [hideBalances, setHideBalances] = useState(false);
 
   const totalIncome = getTotalIncome();
@@ -43,17 +45,19 @@ export default function DashboardScreen() {
     .map(cat => ({
       ...cat,
       spent: state.transactions
-        .filter(t => t.category === cat.name && t.type === 'expense')
+        .filter(t => t.category._id === cat.id && t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0)
     }))
     .sort((a, b) => b.spent - a.spent)
     .slice(0, 3);
 
+  const styles = createStyles(theme);
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <LinearGradient
-        colors={['#10B981', '#059669']}
+        colors={isDark ? ['#1A1A1A', '#262626'] : ['#10B981', '#059669']}
         style={styles.header}
       >
         <View style={styles.headerContent}>
@@ -103,7 +107,7 @@ export default function DashboardScreen() {
       {/* Budget Progress */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Target size={24} color="#10B981" />
+          <Target size={24} color={theme.primary} />
           <Text style={styles.sectionTitle}>Monthly Budget</Text>
         </View>
         <View style={styles.budgetCard}>
@@ -138,7 +142,7 @@ export default function DashboardScreen() {
       {/* Bank Accounts */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <CreditCard size={24} color="#10B981" />
+          <CreditCard size={24} color={theme.primary} />
           <Text style={styles.sectionTitle}>Accounts</Text>
         </View>
         <View style={styles.accountsGrid}>
@@ -168,7 +172,7 @@ export default function DashboardScreen() {
       {/* Recent Transactions */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Calendar size={24} color="#10B981" />
+          <Calendar size={24} color={theme.primary} />
           <Text style={styles.sectionTitle}>Recent Transactions</Text>
         </View>
         <View style={styles.transactionsList}>
@@ -187,7 +191,7 @@ export default function DashboardScreen() {
                 </View>
                 <View>
                   <Text style={styles.transactionDescription}>{transaction.description}</Text>
-                  <Text style={styles.transactionCategory}>{transaction.category}</Text>
+                  <Text style={styles.transactionCategory}>{transaction.category.name}</Text>
                 </View>
               </View>
               <Text style={[
@@ -206,7 +210,7 @@ export default function DashboardScreen() {
       {/* Top Spending Categories */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <AlertCircle size={24} color="#10B981" />
+          <AlertCircle size={24} color={theme.primary} />
           <Text style={styles.sectionTitle}>Top Spending</Text>
         </View>
         <View style={styles.categoriesList}>
@@ -227,10 +231,10 @@ export default function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.background,
   },
   header: {
     paddingTop: 60,
@@ -267,7 +271,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   balanceCard: {
-    backgroundColor: 'white',
+    backgroundColor: theme.card,
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
@@ -277,18 +281,18 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   primaryCard: {
-    backgroundColor: '#1F2937',
+    backgroundColor: theme.surface,
   },
   balanceLabel: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#9CA3AF',
+    color: theme.textSecondary,
     marginBottom: 8,
   },
   balanceAmount: {
     fontSize: 32,
     fontFamily: 'Inter-Bold',
-    color: 'white',
+    color: theme.text,
   },
   incomeRow: {
     flexDirection: 'row',
@@ -304,7 +308,7 @@ const styles = StyleSheet.create({
   incomeAmount: {
     fontSize: 24,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
+    color: theme.text,
   },
   expenseRow: {
     flexDirection: 'row',
@@ -320,7 +324,7 @@ const styles = StyleSheet.create({
   expenseAmount: {
     fontSize: 24,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
+    color: theme.text,
   },
   section: {
     paddingHorizontal: 24,
@@ -334,11 +338,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
+    color: theme.text,
     marginLeft: 12,
   },
   budgetCard: {
-    backgroundColor: 'white',
+    backgroundColor: theme.card,
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
@@ -354,16 +358,16 @@ const styles = StyleSheet.create({
   budgetAmount: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
+    color: theme.text,
   },
   budgetLabel: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
+    color: theme.textSecondary,
   },
   progressBar: {
     height: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: theme.surface,
     borderRadius: 4,
     marginBottom: 12,
     overflow: 'hidden',
@@ -380,7 +384,7 @@ const styles = StyleSheet.create({
   budgetText: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#6B7280',
+    color: theme.textSecondary,
   },
   budgetPercent: {
     fontSize: 14,
@@ -390,7 +394,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   accountCard: {
-    backgroundColor: 'white',
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
@@ -408,7 +412,7 @@ const styles = StyleSheet.create({
   accountName: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#1F2937',
+    color: theme.text,
   },
   accountStatus: {
     paddingHorizontal: 8,
@@ -422,20 +426,20 @@ const styles = StyleSheet.create({
   accountBalance: {
     fontSize: 20,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
+    color: theme.text,
     marginBottom: 4,
   },
   accountType: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#6B7280',
+    color: theme.textSecondary,
     textTransform: 'capitalize',
   },
   transactionsList: {
     gap: 12,
   },
   transactionItem: {
-    backgroundColor: 'white',
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -463,12 +467,12 @@ const styles = StyleSheet.create({
   transactionDescription: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#1F2937',
+    color: theme.text,
   },
   transactionCategory: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#6B7280',
+    color: theme.textSecondary,
     marginTop: 2,
   },
   transactionAmount: {
@@ -479,7 +483,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   categoryItem: {
-    backgroundColor: 'white',
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -504,11 +508,11 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#1F2937',
+    color: theme.text,
   },
   categoryAmount: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
+    color: theme.text,
   },
 });

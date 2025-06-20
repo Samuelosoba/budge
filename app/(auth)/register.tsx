@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react-native';
 
@@ -23,6 +24,7 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signUp } = useAuth();
+  const { theme, isDark } = useTheme();
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -51,9 +53,11 @@ export default function RegisterScreen() {
     }
   };
 
+  const styles = createStyles(theme, isDark);
+
   return (
     <LinearGradient
-      colors={['#10B981', '#059669', '#047857']}
+      colors={isDark ? ['#1A1A1A', '#262626', '#333333'] : ['#10B981', '#059669', '#047857']}
       style={styles.container}
     >
       <KeyboardAvoidingView
@@ -67,12 +71,12 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <User size={20} color="#6B7280" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: theme.card }]}>
+              <User size={20} color={theme.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text }]}
                 placeholder="Full name"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.textTertiary}
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
@@ -80,12 +84,12 @@ export default function RegisterScreen() {
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Mail size={20} color="#6B7280" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: theme.card }]}>
+              <Mail size={20} color={theme.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text }]}
                 placeholder="Email address"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.textTertiary}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -94,12 +98,12 @@ export default function RegisterScreen() {
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Lock size={20} color="#6B7280" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: theme.card }]}>
+              <Lock size={20} color={theme.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, styles.passwordInput]}
+                style={[styles.input, styles.passwordInput, { color: theme.text }]}
                 placeholder="Password"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.textTertiary}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -111,19 +115,19 @@ export default function RegisterScreen() {
                 style={styles.eyeIcon}
               >
                 {showPassword ? (
-                  <EyeOff size={20} color="#6B7280" />
+                  <EyeOff size={20} color={theme.textSecondary} />
                 ) : (
-                  <Eye size={20} color="#6B7280" />
+                  <Eye size={20} color={theme.textSecondary} />
                 )}
               </TouchableOpacity>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Lock size={20} color="#6B7280" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { backgroundColor: theme.card }]}>
+              <Lock size={20} color={theme.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, styles.passwordInput]}
+                style={[styles.input, styles.passwordInput, { color: theme.text }]}
                 placeholder="Confirm password"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.textTertiary}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showConfirmPassword}
@@ -135,9 +139,9 @@ export default function RegisterScreen() {
                 style={styles.eyeIcon}
               >
                 {showConfirmPassword ? (
-                  <EyeOff size={20} color="#6B7280" />
+                  <EyeOff size={20} color={theme.textSecondary} />
                 ) : (
-                  <Eye size={20} color="#6B7280" />
+                  <Eye size={20} color={theme.textSecondary} />
                 )}
               </TouchableOpacity>
             </View>
@@ -165,7 +169,7 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -199,7 +203,6 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 4,
@@ -216,7 +219,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#1F2937',
     paddingVertical: 16,
   },
   passwordInput: {

@@ -1,15 +1,17 @@
 import { Tabs, Redirect } from 'expo-router';
 import { Chrome as Home, ChartBar as BarChart3, MessageCircle, Settings, Plus } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function TabLayout() {
   const { user, isLoading } = useAuth();
+  const { theme } = useTheme();
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <Text style={[styles.loadingText, { color: theme.text }]}>Loading...</Text>
       </View>
     );
   }
@@ -22,12 +24,12 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#10B981',
-        tabBarInactiveTintColor: '#6B7280',
+        tabBarActiveTintColor: theme.tabBarActive,
+        tabBarInactiveTintColor: theme.tabBarInactive,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.tabBar,
           borderTopWidth: 1,
-          borderTopColor: '#F3F4F6',
+          borderTopColor: theme.border,
           paddingTop: 8,
           paddingBottom: 8,
           height: 60,
@@ -93,11 +95,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
   },
   loadingText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
   },
 });
