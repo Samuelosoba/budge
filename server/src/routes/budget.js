@@ -25,7 +25,6 @@ router.put('/monthly', auth, [
   body('monthlyBudget')
     .exists()
     .withMessage('Monthly budget is required')
-    .customSanitizer(value => String(value))
     .isFloat({ min: 0 })
     .withMessage('Monthly budget must be a positive number')
     .toFloat()
