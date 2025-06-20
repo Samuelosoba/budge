@@ -11,7 +11,7 @@ import {
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Plus, Eye, EyeOff, ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, TrendingDown, Calendar, Settings, CreditCard, ChartBar as BarChart3, RefreshCw } from 'lucide-react-native';
+import { Eye, EyeOff, ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, TrendingDown, Calendar, Settings } from 'lucide-react-native';
 import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
@@ -75,18 +75,6 @@ export default function DashboardScreen() {
 
   const overviewTotal = overviewData.reduce((sum, t) => sum + t.amount, 0);
   const overviewCount = overviewData.length;
-
-  // Top spending categories
-  const topCategories = state.categories
-    .filter(cat => cat.type === 'expense')
-    .map(cat => ({
-      ...cat,
-      spent: state.transactions
-        .filter(t => t.category._id === cat.id && t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0)
-    }))
-    .sort((a, b) => b.spent - a.spent)
-    .slice(0, 3);
 
   const styles = createStyles(theme, isDark);
 
@@ -161,29 +149,6 @@ export default function DashboardScreen() {
               </View>
             </View>
           </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: theme.primary }]}
-            onPress={() => router.push('/(tabs)/transactions')}
-          >
-            <Plus size={20} color={isDark ? '#1A1A1A' : 'white'} />
-            <Text style={[styles.actionButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
-              Add Transaction
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]}
-            onPress={() => router.push('/(tabs)/analytics')}
-          >
-            <BarChart3 size={20} color={theme.primary} />
-            <Text style={[styles.actionButtonText, { color: theme.text }]}>
-              View Analytics
-            </Text>
-          </TouchableOpacity>
         </View>
 
         {/* Financial Overview with Toggle */}
@@ -354,48 +319,8 @@ export default function DashboardScreen() {
               <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
                 Start tracking your finances by adding your first transaction
               </Text>
-              <TouchableOpacity 
-                style={[styles.emptyStateButton, { backgroundColor: theme.primary }]}
-                onPress={() => router.push('/(tabs)/transactions')}
-              >
-                <Plus size={20} color={isDark ? '#1A1A1A' : 'white'} />
-                <Text style={[styles.emptyStateButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
-                  Add Transaction
-                </Text>
-              </TouchableOpacity>
             </View>
           )}
-        </View>
-
-        {/* Manage Account Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Manage Account</Text>
-          </View>
-          
-          <View style={styles.manageGrid}>
-            <TouchableOpacity 
-              style={[styles.manageCard, { backgroundColor: theme.card }]}
-              onPress={() => router.push('/(tabs)/settings')}
-            >
-              <Settings size={24} color={theme.primary} />
-              <Text style={[styles.manageCardTitle, { color: theme.text }]}>Settings</Text>
-              <Text style={[styles.manageCardSubtitle, { color: theme.textSecondary }]}>
-                Preferences & budget
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.manageCard, { backgroundColor: theme.card }]}
-              onPress={() => router.push('/(tabs)/analytics')}
-            >
-              <BarChart3 size={24} color={theme.primary} />
-              <Text style={[styles.manageCardTitle, { color: theme.text }]}>Analytics</Text>
-              <Text style={[styles.manageCardSubtitle, { color: theme.textSecondary }]}>
-                Insights & reports
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </ScrollView>
     </View>
@@ -505,30 +430,6 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     height: 32,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginHorizontal: 16,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    paddingHorizontal: 24,
-    marginBottom: 32,
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  actionButtonText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
   },
   section: {
     paddingHorizontal: 24,
@@ -669,43 +570,5 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 24,
-  },
-  emptyStateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 20,
-    gap: 8,
-  },
-  emptyStateButtonText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
-  },
-  manageGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  manageCard: {
-    flex: 1,
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  manageCardTitle: {
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  manageCardSubtitle: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    textAlign: 'center',
   },
 });

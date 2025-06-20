@@ -106,16 +106,6 @@ export default function CategoryModal({ visible, onClose, type, editingCategory 
       onRequestClose={onClose}
     >
       <View style={styles.container}>
-        {/* Status Bar */}
-        <View style={styles.statusBar}>
-          <Text style={styles.time}>9:41</Text>
-          <View style={styles.statusIcons}>
-            <View style={styles.signalIcon} />
-            <View style={styles.wifiIcon} />
-            <View style={styles.batteryIcon} />
-          </View>
-        </View>
-
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -286,48 +276,13 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     flex: 1,
     backgroundColor: theme.background,
   },
-  statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 10,
-  },
-  time: {
-    fontSize: 17,
-    fontFamily: 'Inter-Bold',
-    color: theme.text,
-  },
-  statusIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  signalIcon: {
-    width: 18,
-    height: 12,
-    backgroundColor: theme.text,
-    borderRadius: 2,
-  },
-  wifiIcon: {
-    width: 15,
-    height: 12,
-    backgroundColor: theme.text,
-    borderRadius: 2,
-  },
-  batteryIcon: {
-    width: 24,
-    height: 12,
-    backgroundColor: theme.text,
-    borderRadius: 2,
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: theme.border,
   },

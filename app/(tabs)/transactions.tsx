@@ -162,20 +162,12 @@ export default function TransactionsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Transactions</Text>
-          <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={() => openCategoryModal('expense')}
-            >
-              <Settings size={20} color={theme.text} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => openModal()}
-            >
-              <Plus size={24} color={theme.text} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => openCategoryModal('expense')}
+          >
+            <Settings size={20} color={theme.text} />
+          </TouchableOpacity>
         </View>
 
         {/* Search and Filter */}
@@ -285,6 +277,14 @@ export default function TransactionsScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={[styles.floatingButton, { backgroundColor: theme.primary }]}
+        onPress={() => openModal()}
+      >
+        <Plus size={24} color={isDark ? '#1A1A1A' : 'white'} />
+      </TouchableOpacity>
 
       {/* Add/Edit Transaction Modal */}
       <Modal
@@ -484,19 +484,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: theme.text,
   },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   headerButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: theme.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -625,6 +613,21 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 100, // Above the tab bar
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   modalContainer: {
     flex: 1,
