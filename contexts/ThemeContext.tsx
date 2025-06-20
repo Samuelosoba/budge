@@ -9,7 +9,6 @@ interface ThemeColors {
   background: string;
   surface: string;
   surfaceSecondary: string;
-  surfaceTertiary: string;
   
   // Text colors
   text: string;
@@ -21,104 +20,112 @@ interface ThemeColors {
   primaryLight: string;
   primaryDark: string;
   
-  // Accent colors
-  accent: string;
-  accentLight: string;
-  
   // Status colors
   success: string;
   warning: string;
   error: string;
-  info: string;
   
   // Border colors
   border: string;
-  borderLight: string;
   
   // Card colors
   card: string;
-  cardSecondary: string;
   
   // Tab bar
   tabBar: string;
   tabBarActive: string;
   tabBarInactive: string;
   
-  // Modal
-  modalBackground: string;
-  overlay: string;
+  // Special UI elements to match exact design
+  balanceCard: string;
+  balanceText: string;
+  circleButton: string;
+  circleButtonSecondary: string;
+  pillButton: string;
+  pillButtonText: string;
+  transactionRow: string;
+  statusBarBg: string;
+  goldAccent: string;
+  navyBlue: string;
+  lightCream: string;
 }
 
 const lightTheme: ThemeColors = {
-  background: '#FFFFFF',
-  surface: '#F8F9FA',
-  surfaceSecondary: '#F1F3F4',
-  surfaceTertiary: '#E8EAED',
+  background: '#F5F5F0', // Light cream background
+  surface: '#FFFFFF',
+  surfaceSecondary: '#F8F9FA',
   
   text: '#1A1A1A',
   textSecondary: '#5F6368',
   textTertiary: '#9AA0A6',
   
-  primary: '#10B981',
-  primaryLight: '#34D399',
-  primaryDark: '#059669',
-  
-  accent: '#3B82F6',
-  accentLight: '#60A5FA',
+  primary: '#2C3E50', // Navy blue from design
+  primaryLight: '#34495E',
+  primaryDark: '#1A252F',
   
   success: '#10B981',
   warning: '#F59E0B',
   error: '#EF4444',
-  info: '#3B82F6',
   
   border: '#E5E7EB',
-  borderLight: '#F3F4F6',
   
   card: '#FFFFFF',
-  cardSecondary: '#F8F9FA',
   
   tabBar: '#FFFFFF',
-  tabBarActive: '#10B981',
+  tabBarActive: '#2C3E50',
   tabBarInactive: '#9CA3AF',
   
-  modalBackground: '#FFFFFF',
-  overlay: 'rgba(0, 0, 0, 0.5)',
+  // Exact design elements
+  balanceCard: '#2C3E50', // Navy blue card
+  balanceText: '#FFFFFF',
+  circleButton: '#D4AF37', // Gold accent
+  circleButtonSecondary: '#8E8E93',
+  pillButton: '#2C3E50',
+  pillButtonText: '#FFFFFF',
+  transactionRow: 'rgba(255, 255, 255, 0.95)',
+  statusBarBg: '#F5F5F0',
+  goldAccent: '#D4AF37',
+  navyBlue: '#2C3E50',
+  lightCream: '#F5F5F0',
 };
 
 const darkTheme: ThemeColors = {
-  background: '#0F0F0F',
+  background: '#0F0F0F', // Deep black background
   surface: '#1A1A1A',
   surfaceSecondary: '#262626',
-  surfaceTertiary: '#333333',
   
   text: '#FFFFFF',
   textSecondary: '#B3B3B3',
   textTertiary: '#808080',
   
-  primary: '#10B981',
-  primaryLight: '#34D399',
-  primaryDark: '#059669',
-  
-  accent: '#60A5FA',
-  accentLight: '#93C5FD',
+  primary: '#D4AF37', // Gold accent for dark mode
+  primaryLight: '#F4D03F',
+  primaryDark: '#B7950B',
   
   success: '#10B981',
   warning: '#F59E0B',
   error: '#EF4444',
-  info: '#60A5FA',
   
   border: '#404040',
-  borderLight: '#333333',
   
   card: '#1A1A1A',
-  cardSecondary: '#262626',
   
   tabBar: '#1A1A1A',
-  tabBarActive: '#10B981',
+  tabBarActive: '#D4AF37',
   tabBarInactive: '#808080',
   
-  modalBackground: '#1A1A1A',
-  overlay: 'rgba(0, 0, 0, 0.7)',
+  // Exact design elements for dark mode
+  balanceCard: '#1A1A1A', // Dark card
+  balanceText: '#FFFFFF',
+  circleButton: '#D4AF37', // Gold accent
+  circleButtonSecondary: '#404040',
+  pillButton: '#D4AF37',
+  pillButtonText: '#1A1A1A',
+  transactionRow: 'rgba(26, 26, 26, 0.95)',
+  statusBarBg: '#0F0F0F',
+  goldAccent: '#D4AF37',
+  navyBlue: '#2C3E50',
+  lightCream: '#F5F5F0',
 };
 
 interface ThemeContextType {

@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBudget } from '@/contexts/BudgetContext';
 import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
 import CategoryModal from '@/components/CategoryModal';
-import { User, Crown, Bell, Lock, Palette, CreditCard, CircleHelp as HelpCircle, LogOut, Settings as SettingsIcon, Target, Smartphone, Shield, Mail, ChevronRight, DollarSign, Plus, Sun, Moon, Monitor } from 'lucide-react-native';
+import { User, Crown, Bell, Lock, Palette, CreditCard, CircleHelp as HelpCircle, LogOut, Target, Smartphone, Shield, Mail, ChevronRight, DollarSign, Plus, Sun, Moon, Monitor } from 'lucide-react-native';
 
 export default function SettingsScreen() {
   const { user, signOut, upgradeToPro } = useAuth();
@@ -135,19 +135,26 @@ export default function SettingsScreen() {
     </TouchableOpacity>
   );
 
-  const styles = createStyles(theme);
+  const styles = createStyles(theme, isDark);
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <LinearGradient
-        colors={isDark ? ['#1A1A1A', '#262626'] : ['#10B981', '#059669']}
-        style={styles.header}
-      >
-        <Text style={styles.headerTitle}>Settings</Text>
-      </LinearGradient>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Status Bar */}
+        <View style={styles.statusBar}>
+          <Text style={styles.time}>9:41</Text>
+          <View style={styles.statusIcons}>
+            <View style={styles.signalIcon} />
+            <View style={styles.wifiIcon} />
+            <View style={styles.batteryIcon} />
+          </View>
+        </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Settings</Text>
+        </View>
+
         {/* Profile Section */}
         <SettingsSection title="Profile">
           <View style={styles.profileCard}>
@@ -406,27 +413,62 @@ export default function SettingsScreen() {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.background,
   },
+  scrollContent: {
+    paddingBottom: 120, // Extra padding for mobile navigation
+  },
+  statusBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 10,
+  },
+  time: {
+    fontSize: 17,
+    fontFamily: 'Inter-Bold',
+    color: theme.text,
+  },
+  statusIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  signalIcon: {
+    width: 18,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  wifiIcon: {
+    width: 15,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  batteryIcon: {
+    width: 24,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
   header: {
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   headerTitle: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
-    color: 'white',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
+    color: theme.text,
   },
   section: {
     marginBottom: 32,
+    paddingHorizontal: 20,
   },
   sectionTitle: {
     fontSize: 18,

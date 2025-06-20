@@ -30,14 +30,18 @@ export default function TabLayout() {
           backgroundColor: theme.tabBar,
           borderTopWidth: 1,
           borderTopColor: theme.border,
-          paddingTop: 8,
-          paddingBottom: 8,
-          height: 60,
+          paddingTop: 16,
+          paddingBottom: 40, // Increased padding for mobile navigation
+          height: 100, // Increased height for mobile
+          paddingHorizontal: 20,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontFamily: 'Inter-Medium',
-          marginTop: 4,
+          marginTop: 6,
+        },
+        tabBarIconStyle: {
+          marginBottom: 4,
         },
       }}
     >
