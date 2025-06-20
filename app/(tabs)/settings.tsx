@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBudget } from '@/contexts/BudgetContext';
 import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
-import CategoryModal from '@/components/CategoryModal';
+import CategoryManagementModal from '@/components/CategoryManagementModal';
 import { User, Crown, Bell, Lock, Palette, CreditCard, CircleHelp as HelpCircle, LogOut, Target, Smartphone, Shield, Mail, ChevronRight, DollarSign, Plus, Sun, Moon, Monitor } from 'lucide-react-native';
 
 export default function SettingsScreen() {
@@ -159,8 +159,8 @@ export default function SettingsScreen() {
         <SettingsSection title="Profile">
           <View style={styles.profileCard}>
             <View style={styles.profileHeader}>
-              <View style={styles.profileAvatar}>
-                <User size={32} color="white" />
+              <View style={[styles.profileAvatar, { backgroundColor: theme.primary }]}>
+                <User size={32} color={isDark ? '#1A1A1A' : 'white'} />
               </View>
               <View style={styles.profileInfo}>
                 <Text style={[styles.profileName, { color: theme.text }]}>{user?.name}</Text>
@@ -191,16 +191,16 @@ export default function SettingsScreen() {
         {/* Budget Settings */}
         <SettingsSection title="Budget">
           <SettingsItem
-            icon={<Target size={24} color="#10B981" />}
+            icon={<Target size={24} color={theme.primary} />}
             title="Monthly Budget"
             subtitle={`Current: ${formatCurrency(state.monthlyBudget)}`}
             onPress={() => setBudgetModalVisible(true)}
           />
           
           <SettingsItem
-            icon={<Plus size={24} color="#10B981" />}
+            icon={<Plus size={24} color={theme.primary} />}
             title="Manage Categories"
-            subtitle="Add and edit spending categories"
+            subtitle="Add, edit and delete spending categories"
             onPress={() => setCategoryModalVisible(true)}
           />
         </SettingsSection>
@@ -393,7 +393,7 @@ export default function SettingsScreen() {
                   </Text>
                   {themeMode === mode && (
                     <View style={[styles.themeOptionCheck, { backgroundColor: theme.primary }]}>
-                      <Text style={styles.themeOptionCheckText}>✓</Text>
+                      <Text style={[styles.themeOptionCheckText, { color: isDark ? '#1A1A1A' : 'white' }]}>✓</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -403,11 +403,10 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      {/* Category Modal */}
-      <CategoryModal
+      {/* Category Management Modal */}
+      <CategoryManagementModal
         visible={categoryModalVisible}
         onClose={() => setCategoryModalVisible(false)}
-        type="expense"
       />
     </View>
   );
@@ -497,7 +496,6 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#10B981',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -686,6 +684,5 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   themeOptionCheckText: {
     fontSize: 12,
     fontFamily: 'Inter-Bold',
-    color: 'white',
   },
 });
