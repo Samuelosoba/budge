@@ -26,6 +26,7 @@ export default function SettingsScreen() {
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [newBudget, setNewBudget] = useState(state.monthlyBudget.toString());
+  const [isUpdatingBudget, setIsUpdatingBudget] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -49,15 +50,25 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleUpdateBudget = () => {
+  const handleUpdateBudget = async () => {
     const budget = parseFloat(newBudget);
     if (isNaN(budget) || budget <= 0) {
       Alert.alert('Error', 'Please enter a valid budget amount');
       return;
     }
-    setMonthlyBudget(budget);
-    setBudgetModalVisible(false);
-    Alert.alert('Success', 'Monthly budget updated successfully');
+
+    setIsUpdatingBudget(true);
+    
+    try {
+      await setMonthlyBudget(budget);
+      setBudgetModalVisible(false);
+      Alert.alert('Success', 'Monthly budget updated successfully');
+    } catch (error) {
+      console.error('Budget update error:', error);
+      Alert.alert('Error', 'Failed to update monthly budget. Please try again.');
+    } finally {
+      setIsUpdatingBudget(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -299,12 +310,14 @@ export default function SettingsScreen() {
       >
         <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
           <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-            <TouchableOpacity onPress={() => setBudgetModalVisible(false)}>
+            <TouchableOpacity onPress={() => setBudgetModalVisible(false)} disabled={isUpdatingBudget}>
               <Text style={[styles.modalCancelButton, { color: theme.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
             <Text style={[styles.modalTitle, { color: theme.text }]}>Monthly Budget</Text>
-            <TouchableOpacity onPress={handleUpdateBudget}>
-              <Text style={[styles.modalSaveButton, { color: theme.primary }]}>Save</Text>
+            <TouchableOpacity onPress={handleUpdateBudget} disabled={isUpdatingBudget}>
+              <Text style={[styles.modalSaveButton, { color: isUpdatingBudget ? theme.textTertiary : theme.primary }]}>
+                {isUpdatingBudget ? 'Saving...' : 'Save'}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -322,6 +335,7 @@ export default function SettingsScreen() {
                 onChangeText={setNewBudget}
                 keyboardType="numeric"
                 placeholderTextColor={theme.textTertiary}
+                editable={!isUpdatingBudget}
               />
             </View>
             

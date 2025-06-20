@@ -22,12 +22,22 @@ router.get('/', auth, async (req, res) => {
 
 // Update monthly budget
 router.put('/monthly', auth, [
-  body('monthlyBudget').isFloat({ min: 0 }).withMessage('Monthly budget must be a positive number')
+  body('monthlyBudget')
+    .notEmpty()
+    .withMessage('Monthly budget is required')
+    .isNumeric()
+    .withMessage('Monthly budget must be a number')
+    .toFloat()
+    .isFloat({ min: 0 })
+    .withMessage('Monthly budget must be a positive number')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        error: 'Validation failed',
+        details: errors.array() 
+      });
     }
 
     const user = await User.findByIdAndUpdate(
@@ -55,7 +65,10 @@ router.put('/preferences', auth, [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        error: 'Validation failed',
+        details: errors.array() 
+      });
     }
 
     const updateData = {};
