@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useBudget, Transaction } from '@/contexts/BudgetContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import CategoryModal from '@/components/CategoryModal';
-import { Plus, Search, Filter, TrendingUp, TrendingDown, Edit, Trash2, Calendar, DollarSign, Tag, FileText, Settings } from 'lucide-react-native';
+import { Plus, Search, Filter, TrendingUp, TrendingDown, CreditCard as Edit, Trash2, Calendar, DollarSign, Tag, FileText, Settings } from 'lucide-react-native';
 
 export default function TransactionsScreen() {
   const { 
