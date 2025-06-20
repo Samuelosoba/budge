@@ -21,7 +21,7 @@ const getApiUrl = () => {
 
 export default getApiUrl;
 
-const API_BASE_URL = getApiUrl();
+const API_BASE_URL ="https://a5ad-102-88-111-97.ngrok-free.app/api" ;
 
 interface ApiContextType {
   apiCall: (endpoint: string, options?: RequestInit) => Promise<any>;
