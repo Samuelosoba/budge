@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,25 +6,28 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Plus, Eye, EyeOff, ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, Calendar } from 'lucide-react-native';
-import { useState } from 'react';
+import { Plus, Eye, EyeOff, ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, TrendingDown, Calendar, Settings, CreditCard, BarChart3, RefreshCw } from 'lucide-react-native';
+import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
-  const { state, getTotalIncome, getTotalExpenses, getBalance } = useBudget();
+  const { state, getTotalIncome, getTotalExpenses, getBalance, refreshData } = useBudget();
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const [hideBalances, setHideBalances] = useState(false);
+  const [selectedOverview, setSelectedOverview] = useState<'income' | 'expense'>('expense');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const totalIncome = getTotalIncome();
   const totalExpenses = getTotalExpenses();
   const balance = getBalance();
-  const budgetUsed = (totalExpenses / state.monthlyBudget) * 100;
+  const budgetUsed = state.monthlyBudget > 0 ? (totalExpenses / state.monthlyBudget) * 100 : 0;
 
   const formatCurrency = (amount: number) => {
     if (hideBalances) return '••••';
@@ -36,10 +39,44 @@ export default function DashboardScreen() {
     }).format(amount);
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const onRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshData();
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Recent transactions (last 5)
   const recentTransactions = state.transactions
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 4);
+    .slice(0, 5);
 
+  // Top transactions by amount
+  const topTransactions = state.transactions
+    .filter(t => t.type === selectedOverview)
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5);
+
+  // Financial overview data
+  const overviewData = selectedOverview === 'income' 
+    ? state.transactions.filter(t => t.type === 'income')
+    : state.transactions.filter(t => t.type === 'expense');
+
+  const overviewTotal = overviewData.reduce((sum, t) => sum + t.amount, 0);
+  const overviewCount = overviewData.length;
+
+  // Top spending categories
   const topCategories = state.categories
     .filter(cat => cat.type === 'expense')
     .map(cat => ({
@@ -55,26 +92,45 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.primary}
+            colors={[theme.primary]}
+          />
+        }
+      >
+        {/* Header with Greeting */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good morning</Text>
-            <Text style={styles.userName}>{user?.name}</Text>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
+            <Text style={styles.userName}>Hi, {user?.name}!</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.eyeButton}
-            onPress={() => setHideBalances(!hideBalances)}
-          >
-            {hideBalances ? (
-              <EyeOff size={20} color={theme.textSecondary} />
-            ) : (
-              <Eye size={20} color={theme.textSecondary} />
-            )}
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => setHideBalances(!hideBalances)}
+            >
+              {hideBalances ? (
+                <EyeOff size={20} color={theme.textSecondary} />
+              ) : (
+                <Eye size={20} color={theme.textSecondary} />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => router.push('/(tabs)/settings')}
+            >
+              <Settings size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Main Balance Card */}
+        {/* Total Balance Card */}
         <View style={[styles.balanceCard, { backgroundColor: theme.balanceCard }]}>
           <View style={styles.balanceHeader}>
             <Text style={styles.balanceLabel}>Total Balance</Text>
@@ -107,88 +163,162 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Budget Progress */}
-        <View style={[styles.budgetCard, { backgroundColor: theme.card }]}>
-          <View style={styles.budgetHeader}>
-            <Text style={[styles.budgetTitle, { color: theme.text }]}>Monthly Budget</Text>
-            <Text style={[styles.budgetPercentage, { color: budgetUsed > 90 ? '#EF4444' : theme.primary }]}>
-              {budgetUsed.toFixed(0)}%
-            </Text>
-          </View>
-          
-          <View style={[styles.budgetProgressBar, { backgroundColor: theme.border }]}>
-            <View
-              style={[
-                styles.budgetProgressFill,
-                {
-                  width: `${Math.min(budgetUsed, 100)}%`,
-                  backgroundColor: budgetUsed > 90 ? '#EF4444' : budgetUsed > 75 ? '#F59E0B' : '#10B981',
-                },
-              ]}
-            />
-          </View>
-          
-          <View style={styles.budgetFooter}>
-            <Text style={[styles.budgetText, { color: theme.textSecondary }]}>
-              {formatCurrency(totalExpenses)} of {formatCurrency(state.monthlyBudget)}
-            </Text>
-            <Text style={[styles.budgetRemaining, { color: theme.text }]}>
-              {formatCurrency(state.monthlyBudget - totalExpenses)} left
-            </Text>
-          </View>
-        </View>
-
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: theme.primary }]}>
+          <TouchableOpacity 
+            style={[styles.actionButton, { backgroundColor: theme.primary }]}
+            onPress={() => router.push('/(tabs)/transactions')}
+          >
             <Plus size={20} color={isDark ? '#1A1A1A' : 'white'} />
             <Text style={[styles.actionButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
               Add Transaction
             </Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]}>
-            <TrendingUp size={20} color={theme.primary} />
+          <TouchableOpacity 
+            style={[styles.actionButton, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]}
+            onPress={() => router.push('/(tabs)/analytics')}
+          >
+            <BarChart3 size={20} color={theme.primary} />
             <Text style={[styles.actionButtonText, { color: theme.text }]}>
               View Analytics
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Top Categories */}
-        {topCategories.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Top Spending</Text>
-              <TouchableOpacity>
-                <Text style={[styles.seeAllText, { color: theme.primary }]}>See all</Text>
+        {/* Financial Overview with Toggle */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Financial Overview</Text>
+            <View style={styles.overviewToggle}>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  { 
+                    backgroundColor: selectedOverview === 'income' ? '#10B981' : theme.surface,
+                    borderColor: selectedOverview === 'income' ? '#10B981' : theme.border,
+                  }
+                ]}
+                onPress={() => setSelectedOverview('income')}
+              >
+                <TrendingUp size={16} color={selectedOverview === 'income' ? 'white' : '#10B981'} />
+                <Text style={[
+                  styles.toggleButtonText,
+                  { color: selectedOverview === 'income' ? 'white' : theme.textSecondary }
+                ]}>
+                  Income
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  { 
+                    backgroundColor: selectedOverview === 'expense' ? '#EF4444' : theme.surface,
+                    borderColor: selectedOverview === 'expense' ? '#EF4444' : theme.border,
+                  }
+                ]}
+                onPress={() => setSelectedOverview('expense')}
+              >
+                <TrendingDown size={16} color={selectedOverview === 'expense' ? 'white' : '#EF4444'} />
+                <Text style={[
+                  styles.toggleButtonText,
+                  { color: selectedOverview === 'expense' ? 'white' : theme.textSecondary }
+                ]}>
+                  Expenses
+                </Text>
               </TouchableOpacity>
             </View>
-            
-            <View style={styles.categoriesGrid}>
-              {topCategories.map((category, index) => (
-                <View key={category.id} style={[styles.categoryCard, { backgroundColor: theme.card }]}>
-                  <View style={[styles.categoryIcon, { backgroundColor: category.color }]} />
-                  <Text style={[styles.categoryName, { color: theme.text }]}>{category.name}</Text>
-                  <Text style={[styles.categoryAmount, { color: theme.textSecondary }]}>
-                    {formatCurrency(category.spent)}
-                  </Text>
+          </View>
+          
+          <View style={[styles.overviewCard, { backgroundColor: theme.card }]}>
+            <View style={styles.overviewStats}>
+              <View style={styles.overviewStat}>
+                <Text style={[styles.overviewStatValue, { color: theme.text }]}>
+                  {formatCurrency(overviewTotal)}
+                </Text>
+                <Text style={[styles.overviewStatLabel, { color: theme.textSecondary }]}>
+                  Total {selectedOverview}
+                </Text>
+              </View>
+              <View style={styles.overviewStat}>
+                <Text style={[styles.overviewStatValue, { color: theme.text }]}>
+                  {overviewCount}
+                </Text>
+                <Text style={[styles.overviewStatLabel, { color: theme.textSecondary }]}>
+                  Transactions
+                </Text>
+              </View>
+              <View style={styles.overviewStat}>
+                <Text style={[styles.overviewStatValue, { color: theme.text }]}>
+                  {overviewCount > 0 ? formatCurrency(overviewTotal / overviewCount) : '$0'}
+                </Text>
+                <Text style={[styles.overviewStatLabel, { color: theme.textSecondary }]}>
+                  Average
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Top Transactions */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Top {selectedOverview === 'income' ? 'Income' : 'Expenses'}
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/transactions')}>
+              <Text style={[styles.seeAllText, { color: theme.primary }]}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {topTransactions.length > 0 ? (
+            <View style={[styles.transactionsCard, { backgroundColor: theme.card }]}>
+              {topTransactions.map((transaction, index) => (
+                <View key={transaction.id}>
+                  <View style={styles.transactionRow}>
+                    <View style={styles.transactionLeft}>
+                      <View style={[styles.transactionIcon, { backgroundColor: transaction.category.color }]} />
+                      <View style={styles.transactionInfo}>
+                        <Text style={[styles.transactionTitle, { color: theme.text }]}>
+                          {transaction.description}
+                        </Text>
+                        <Text style={[styles.transactionCategory, { color: theme.textSecondary }]}>
+                          {transaction.category.name} • {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={[
+                      styles.transactionAmount,
+                      { color: transaction.type === 'income' ? '#10B981' : theme.text }
+                    ]}>
+                      {formatCurrency(transaction.amount)}
+                    </Text>
+                  </View>
+                  {index < topTransactions.length - 1 && (
+                    <View style={[styles.transactionDivider, { backgroundColor: theme.border }]} />
+                  )}
                 </View>
               ))}
             </View>
-          </View>
-        )}
+          ) : (
+            <View style={[styles.emptyCard, { backgroundColor: theme.card }]}>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                No {selectedOverview} transactions yet
+              </Text>
+            </View>
+          )}
+        </View>
 
         {/* Recent Transactions */}
-        {recentTransactions.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Activity</Text>
-              <TouchableOpacity>
-                <Text style={[styles.seeAllText, { color: theme.primary }]}>See all</Text>
-              </TouchableOpacity>
-            </View>
-            
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Activity</Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/transactions')}>
+              <Text style={[styles.seeAllText, { color: theme.primary }]}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {recentTransactions.length > 0 ? (
             <View style={[styles.transactionsCard, { backgroundColor: theme.card }]}>
               {recentTransactions.map((transaction, index) => (
                 <View key={transaction.id}>
@@ -217,25 +347,56 @@ export default function DashboardScreen() {
                 </View>
               ))}
             </View>
-          </View>
-        )}
+          ) : (
+            <View style={styles.emptyState}>
+              <Calendar size={48} color={theme.textTertiary} />
+              <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No transactions yet</Text>
+              <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
+                Start tracking your finances by adding your first transaction
+              </Text>
+              <TouchableOpacity 
+                style={[styles.emptyStateButton, { backgroundColor: theme.primary }]}
+                onPress={() => router.push('/(tabs)/transactions')}
+              >
+                <Plus size={20} color={isDark ? '#1A1A1A' : 'white'} />
+                <Text style={[styles.emptyStateButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
+                  Add Transaction
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
-        {/* Empty State */}
-        {recentTransactions.length === 0 && (
-          <View style={styles.emptyState}>
-            <Calendar size={48} color={theme.textTertiary} />
-            <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No transactions yet</Text>
-            <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
-              Start tracking your finances by adding your first transaction
-            </Text>
-            <TouchableOpacity style={[styles.emptyStateButton, { backgroundColor: theme.primary }]}>
-              <Plus size={20} color={isDark ? '#1A1A1A' : 'white'} />
-              <Text style={[styles.emptyStateButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
-                Add Transaction
+        {/* Manage Account Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Manage Account</Text>
+          </View>
+          
+          <View style={styles.manageGrid}>
+            <TouchableOpacity 
+              style={[styles.manageCard, { backgroundColor: theme.card }]}
+              onPress={() => router.push('/(tabs)/settings')}
+            >
+              <Settings size={24} color={theme.primary} />
+              <Text style={[styles.manageCardTitle, { color: theme.text }]}>Settings</Text>
+              <Text style={[styles.manageCardSubtitle, { color: theme.textSecondary }]}>
+                Preferences & budget
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.manageCard, { backgroundColor: theme.card }]}
+              onPress={() => router.push('/(tabs)/analytics')}
+            >
+              <BarChart3 size={24} color={theme.primary} />
+              <Text style={[styles.manageCardTitle, { color: theme.text }]}>Analytics</Text>
+              <Text style={[styles.manageCardSubtitle, { color: theme.textSecondary }]}>
+                Insights & reports
               </Text>
             </TouchableOpacity>
           </View>
-        )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -268,7 +429,11 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: theme.text,
   },
-  eyeButton: {
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  headerButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -341,54 +506,6 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginHorizontal: 16,
   },
-  budgetCard: {
-    marginHorizontal: 24,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  budgetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  budgetTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-Bold',
-  },
-  budgetPercentage: {
-    fontSize: 18,
-    fontFamily: 'Inter-Bold',
-  },
-  budgetProgressBar: {
-    height: 8,
-    borderRadius: 4,
-    marginBottom: 12,
-    overflow: 'hidden',
-  },
-  budgetProgressFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  budgetFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  budgetText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-  },
-  budgetRemaining: {
-    fontSize: 14,
-    fontFamily: 'Inter-Bold',
-  },
   quickActions: {
     flexDirection: 'row',
     paddingHorizontal: 24,
@@ -431,36 +548,49 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
   },
-  categoriesGrid: {
+  overviewToggle: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
-  categoryCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
+  toggleButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 4,
   },
-  categoryIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginBottom: 12,
-  },
-  categoryName: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  categoryAmount: {
+  toggleButtonText: {
     fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+  },
+  overviewCard: {
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  overviewStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  overviewStat: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  overviewStatValue: {
+    fontSize: 18,
     fontFamily: 'Inter-Bold',
+    marginBottom: 4,
+  },
+  overviewStatLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    textAlign: 'center',
   },
   transactionsCard: {
     borderRadius: 16,
@@ -508,6 +638,20 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     height: 1,
     marginVertical: 4,
   },
+  emptyCard: {
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+  },
   emptyState: {
     alignItems: 'center',
     paddingVertical: 48,
@@ -537,5 +681,31 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   emptyStateButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
+  },
+  manageGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  manageCard: {
+    flex: 1,
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  manageCardTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  manageCardSubtitle: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
   },
 });
