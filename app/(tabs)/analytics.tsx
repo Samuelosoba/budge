@@ -7,10 +7,9 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { VictoryPie, VictoryBar, VictoryChart, VictoryAxis, VictoryArea } from 'victory';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ChartBar as BarChart3, ChartPie as PieChart, TrendingUp, Calendar, Crown, Lock, CircleArrowUp as ArrowUpCircle, CircleArrowDown as ArrowDownCircle } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -18,6 +17,7 @@ const { width } = Dimensions.get('window');
 export default function AnalyticsScreen() {
   const { state, getTotalIncome, getTotalExpenses } = useBudget();
   const { user, upgradeToPro } = useAuth();
+  const { theme, isDark } = useTheme();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
 
   const formatCurrency = (amount: number) => {
@@ -27,37 +27,29 @@ export default function AnalyticsScreen() {
     }).format(amount);
   };
 
-  // Category spending data for pie chart
+  // Category spending data
   const categoryData = state.categories
     .filter(cat => cat.type === 'expense')
     .map(cat => {
       const spent = state.transactions
-        .filter(t => t.category === cat.name && t.type === 'expense')
+        .filter(t => t.category._id === cat.id && t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
       return {
-        x: cat.name,
-        y: spent,
-        fill: cat.color,
+        name: cat.name,
+        spent,
+        color: cat.color,
+        budget: cat.budget || 0,
       };
     })
-    .filter(item => item.y > 0)
-    .sort((a, b) => b.y - a.y);
-
-  // Monthly spending trend (mock data for demo)
-  const monthlyData = [
-    { month: 'Jan', spending: 2800, income: 3500 },
-    { month: 'Feb', spending: 3200, income: 3500 },
-    { month: 'Mar', spending: 2900, income: 3500 },
-    { month: 'Apr', spending: 3100, income: 3500 },
-    { month: 'May', spending: getTotalExpenses(), income: getTotalIncome() },
-  ];
+    .filter(item => item.spent > 0)
+    .sort((a, b) => b.spent - a.spent);
 
   // Budget progress by category
   const budgetProgress = state.categories
     .filter(cat => cat.type === 'expense' && cat.budget)
     .map(cat => {
       const spent = state.transactions
-        .filter(t => t.category === cat.name && t.type === 'expense')
+        .filter(t => t.category._id === cat.id && t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
       return {
         category: cat.name,
@@ -71,49 +63,55 @@ export default function AnalyticsScreen() {
 
   const ProUpgradeCard = () => (
     <View style={styles.proCard}>
-      <LinearGradient
-        colors={['#8B5CF6', '#7C3AED']}
-        style={styles.proGradient}
-      >
-        <Crown size={32} color="white" />
-        <Text style={styles.proTitle}>Unlock Pro Analytics</Text>
-        <Text style={styles.proSubtitle}>
+      <View style={[styles.proGradient, { backgroundColor: theme.primary }]}>
+        <Crown size={32} color={isDark ? '#1A1A1A' : 'white'} />
+        <Text style={[styles.proTitle, { color: isDark ? '#1A1A1A' : 'white' }]}>Unlock Pro Analytics</Text>
+        <Text style={[styles.proSubtitle, { color: isDark ? 'rgba(26, 26, 26, 0.8)' : 'rgba(255, 255, 255, 0.8)' }]}>
           Get detailed insights, custom reports, and advanced visualizations
         </Text>
-        <TouchableOpacity style={styles.upgradeButton} onPress={upgradeToPro}>
-          <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+        <TouchableOpacity style={[styles.upgradeButton, { backgroundColor: isDark ? '#1A1A1A' : 'white' }]} onPress={upgradeToPro}>
+          <Text style={[styles.upgradeButtonText, { color: theme.primary }]}>Upgrade to Pro</Text>
         </TouchableOpacity>
-      </LinearGradient>
-    </View>
-  );
-
-  const LockedFeature = ({ title, description }: { title: string; description: string }) => (
-    <View style={styles.lockedFeature}>
-      <Lock size={24} color="#9CA3AF" />
-      <View style={styles.lockedContent}>
-        <Text style={styles.lockedTitle}>{title}</Text>
-        <Text style={styles.lockedDescription}>{description}</Text>
       </View>
     </View>
   );
 
+  const LockedFeature = ({ title, description }: { title: string; description: string }) => (
+    <View style={[styles.lockedFeature, { backgroundColor: theme.card }]}>
+      <Lock size={24} color={theme.textTertiary} />
+      <View style={styles.lockedContent}>
+        <Text style={[styles.lockedTitle, { color: theme.textSecondary }]}>{title}</Text>
+        <Text style={[styles.lockedDescription, { color: theme.textTertiary }]}>{description}</Text>
+      </View>
+    </View>
+  );
+
+  const styles = createStyles(theme, isDark);
+
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <LinearGradient
-        colors={['#10B981', '#059669']}
-        style={styles.header}
-      >
-        <Text style={styles.headerTitle}>Analytics</Text>
-        {user?.isPro && (
-          <View style={styles.proBadge}>
-            <Crown size={16} color="#10B981" />
-            <Text style={styles.proBadgeText}>Pro</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Status Bar */}
+        <View style={styles.statusBar}>
+          <Text style={styles.time}>9:41</Text>
+          <View style={styles.statusIcons}>
+            <View style={styles.signalIcon} />
+            <View style={styles.wifiIcon} />
+            <View style={styles.batteryIcon} />
           </View>
-        )}
-      </LinearGradient>
+        </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Analytics</Text>
+          {user?.isPro && (
+            <View style={styles.proBadge}>
+              <Crown size={16} color={theme.primary} />
+              <Text style={[styles.proBadgeText, { color: theme.primary }]}>Pro</Text>
+            </View>
+          )}
+        </View>
+
         {/* Period Selector */}
         <View style={styles.periodSelector}>
           {[
@@ -125,14 +123,19 @@ export default function AnalyticsScreen() {
               key={period.key}
               style={[
                 styles.periodButton,
-                selectedPeriod === period.key && styles.activePeriodButton,
+                { 
+                  backgroundColor: selectedPeriod === period.key ? theme.primary : theme.surface,
+                  borderColor: selectedPeriod === period.key ? theme.primary : theme.border,
+                }
               ]}
               onPress={() => setSelectedPeriod(period.key as any)}
             >
               <Text
                 style={[
                   styles.periodButtonText,
-                  selectedPeriod === period.key && styles.activePeriodButtonText,
+                  { 
+                    color: selectedPeriod === period.key ? (isDark ? '#1A1A1A' : 'white') : theme.textSecondary 
+                  }
                 ]}
               >
                 {period.label}
@@ -143,50 +146,60 @@ export default function AnalyticsScreen() {
 
         {/* Quick Stats */}
         <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { backgroundColor: theme.card }]}>
             <ArrowUpCircle size={20} color="#10B981" />
-            <Text style={styles.statValue}>{formatCurrency(getTotalIncome())}</Text>
-            <Text style={styles.statLabel}>Total Income</Text>
+            <Text style={[styles.statValue, { color: theme.text }]}>{formatCurrency(getTotalIncome())}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Income</Text>
           </View>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { backgroundColor: theme.card }]}>
             <ArrowDownCircle size={20} color="#EF4444" />
-            <Text style={styles.statValue}>{formatCurrency(getTotalExpenses())}</Text>
-            <Text style={styles.statLabel}>Total Expenses</Text>
+            <Text style={[styles.statValue, { color: theme.text }]}>{formatCurrency(getTotalExpenses())}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Expenses</Text>
           </View>
         </View>
 
         {/* Spending by Category */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <PieChart size={24} color="#10B981" />
-            <Text style={styles.sectionTitle}>Spending by Category</Text>
+            <PieChart size={24} color={theme.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Spending by Category</Text>
           </View>
           
           {categoryData.length > 0 ? (
-            <View style={styles.chartCard}>
-              <VictoryPie
-                data={categoryData}
-                width={width - 48}
-                height={200}
-                innerRadius={60}
-                padAngle={2}
-                labelComponent={<></>}
-                colorScale={categoryData.map(item => item.fill)}
-              />
+            <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
+              {/* Simple Chart Representation */}
+              <View style={styles.simpleChart}>
+                <View style={styles.chartContainer}>
+                  {categoryData.slice(0, 4).map((item, index) => (
+                    <View key={index} style={styles.chartSegment}>
+                      <View 
+                        style={[
+                          styles.chartBar, 
+                          { 
+                            backgroundColor: item.color,
+                            height: Math.max(20, (item.spent / Math.max(...categoryData.map(c => c.spent))) * 120)
+                          }
+                        ]} 
+                      />
+                      <Text style={[styles.chartLabel, { color: theme.textSecondary }]}>{item.name}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
               
               <View style={styles.legendContainer}>
                 {categoryData.slice(0, 5).map((item, index) => (
                   <View key={index} style={styles.legendItem}>
-                    <View style={[styles.legendColor, { backgroundColor: item.fill }]} />
-                    <Text style={styles.legendText}>{item.x}</Text>
-                    <Text style={styles.legendAmount}>{formatCurrency(item.y)}</Text>
+                    <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+                    <Text style={[styles.legendText, { color: theme.text }]}>{item.name}</Text>
+                    <Text style={[styles.legendAmount, { color: theme.text }]}>{formatCurrency(item.spent)}</Text>
                   </View>
                 ))}
               </View>
             </View>
           ) : (
-            <View style={styles.emptyChart}>
-              <Text style={styles.emptyChartText}>No expense data available</Text>
+            <View style={[styles.emptyChart, { backgroundColor: theme.card }]}>
+              <Text style={[styles.emptyChartText, { color: theme.textSecondary }]}>No expense data available</Text>
             </View>
           )}
         </View>
@@ -194,24 +207,24 @@ export default function AnalyticsScreen() {
         {/* Budget Progress */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <BarChart3 size={24} color="#10B981" />
-            <Text style={styles.sectionTitle}>Budget Progress</Text>
+            <BarChart3 size={24} color={theme.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Budget Progress</Text>
           </View>
 
           <View style={styles.budgetProgressList}>
             {budgetProgress.map((item, index) => (
-              <View key={index} style={styles.budgetProgressItem}>
+              <View key={index} style={[styles.budgetProgressItem, { backgroundColor: theme.card }]}>
                 <View style={styles.budgetProgressHeader}>
                   <View style={styles.budgetProgressLeft}>
                     <View style={[styles.categoryColor, { backgroundColor: item.color }]} />
-                    <Text style={styles.budgetProgressCategory}>{item.category}</Text>
+                    <Text style={[styles.budgetProgressCategory, { color: theme.text }]}>{item.category}</Text>
                   </View>
-                  <Text style={styles.budgetProgressAmount}>
+                  <Text style={[styles.budgetProgressAmount, { color: theme.textSecondary }]}>
                     {formatCurrency(item.spent)} / {formatCurrency(item.budget)}
                   </Text>
                 </View>
                 
-                <View style={styles.budgetProgressBar}>
+                <View style={[styles.budgetProgressBar, { backgroundColor: theme.border }]}>
                   <View
                     style={[
                       styles.budgetProgressFill,
@@ -244,29 +257,16 @@ export default function AnalyticsScreen() {
         {/* Monthly Trends - Pro Feature */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <TrendingUp size={24} color="#10B981" />
-            <Text style={styles.sectionTitle}>Monthly Trends</Text>
+            <TrendingUp size={24} color={theme.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Monthly Trends</Text>
             {!user?.isPro && <Crown size={16} color="#8B5CF6" />}
           </View>
 
           {user?.isPro ? (
-            <View style={styles.chartCard}>
-              <VictoryChart
-                width={width - 48}
-                height={200}
-                padding={{ left: 60, top: 20, right: 40, bottom: 40 }}
-              >
-                <VictoryAxis dependentAxis tickFormat={(t) => `$${t}`} />
-                <VictoryAxis />
-                <VictoryArea
-                  data={monthlyData}
-                  x="month"
-                  y="spending"
-                  style={{
-                    data: { fill: "#10B981", fillOpacity: 0.6, stroke: "#10B981", strokeWidth: 2 }
-                  }}
-                />
-              </VictoryChart>
+            <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
+              <View style={styles.trendChart}>
+                <Text style={[styles.comingSoon, { color: theme.textSecondary }]}>Advanced charts coming soon!</Text>
+              </View>
             </View>
           ) : (
             <LockedFeature
@@ -279,14 +279,14 @@ export default function AnalyticsScreen() {
         {/* Savings Goals - Pro Feature */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Calendar size={24} color="#10B981" />
-            <Text style={styles.sectionTitle}>Savings Goals</Text>
+            <Calendar size={24} color={theme.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Savings Goals</Text>
             {!user?.isPro && <Crown size={16} color="#8B5CF6" />}
           </View>
 
           {user?.isPro ? (
-            <View style={styles.chartCard}>
-              <Text style={styles.comingSoon}>Savings goals coming soon!</Text>
+            <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
+              <Text style={[styles.comingSoon, { color: theme.textSecondary }]}>Savings goals coming soon!</Text>
             </View>
           ) : (
             <LockedFeature
@@ -300,28 +300,66 @@ export default function AnalyticsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.background,
   },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+  scrollContent: {
+    paddingBottom: 120, // Extra padding for mobile navigation
+  },
+  statusBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 10,
+  },
+  time: {
+    fontSize: 17,
+    fontFamily: 'Inter-Bold',
+    color: theme.text,
+  },
+  statusIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  signalIcon: {
+    width: 18,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  wifiIcon: {
+    width: 15,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  batteryIcon: {
+    width: 24,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   headerTitle: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
-    color: 'white',
+    color: theme.text,
   },
   proBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: theme.surface,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -330,18 +368,14 @@ const styles = StyleSheet.create({
   proBadgeText: {
     fontSize: 12,
     fontFamily: 'Inter-Bold',
-    color: '#10B981',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
   },
   periodSelector: {
     flexDirection: 'row',
-    backgroundColor: 'white',
+    backgroundColor: theme.surface,
     borderRadius: 12,
     padding: 4,
-    marginVertical: 16,
+    marginHorizontal: 20,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -353,26 +387,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     borderRadius: 8,
-  },
-  activePeriodButton: {
-    backgroundColor: '#10B981',
+    borderWidth: 1,
   },
   periodButtonText: {
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
-    color: '#6B7280',
-  },
-  activePeriodButtonText: {
-    color: 'white',
   },
   statsGrid: {
     flexDirection: 'row',
     gap: 12,
+    paddingHorizontal: 20,
     marginBottom: 24,
   },
   statCard: {
     flex: 1,
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -385,17 +413,16 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
     marginTop: 8,
   },
   statLabel: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
     marginTop: 4,
   },
   section: {
     marginBottom: 32,
+    paddingHorizontal: 20,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -405,15 +432,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
     marginLeft: 12,
     flex: 1,
   },
   chartCard: {
-    backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -421,7 +445,6 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   emptyChart: {
-    backgroundColor: 'white',
     borderRadius: 16,
     padding: 48,
     alignItems: 'center',
@@ -429,11 +452,38 @@ const styles = StyleSheet.create({
   emptyChartText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
+  },
+  simpleChart: {
+    marginBottom: 20,
+  },
+  chartContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    height: 140,
+    paddingHorizontal: 20,
+  },
+  chartSegment: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  chartBar: {
+    width: 30,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  chartLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    textAlign: 'center',
+  },
+  trendChart: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   legendContainer: {
-    width: '100%',
-    marginTop: 16,
+    gap: 8,
   },
   legendItem: {
     flexDirection: 'row',
@@ -450,18 +500,15 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#1F2937',
   },
   legendAmount: {
     fontSize: 14,
     fontFamily: 'Inter-Bold',
-    color: '#1F2937',
   },
   budgetProgressList: {
     gap: 16,
   },
   budgetProgressItem: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
@@ -489,16 +536,13 @@ const styles = StyleSheet.create({
   budgetProgressCategory: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#1F2937',
   },
   budgetProgressAmount: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
   },
   budgetProgressBar: {
     height: 8,
-    backgroundColor: '#F3F4F6',
     borderRadius: 4,
     marginBottom: 8,
     overflow: 'hidden',
@@ -520,23 +564,21 @@ const styles = StyleSheet.create({
   proGradient: {
     padding: 24,
     alignItems: 'center',
+    borderRadius: 16,
   },
   proTitle: {
     fontSize: 20,
     fontFamily: 'Inter-Bold',
-    color: 'white',
     marginTop: 12,
     marginBottom: 8,
   },
   proSubtitle: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     marginBottom: 20,
   },
   upgradeButton: {
-    backgroundColor: 'white',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 20,
@@ -544,10 +586,8 @@ const styles = StyleSheet.create({
   upgradeButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: '#8B5CF6',
   },
   lockedFeature: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 24,
     flexDirection: 'row',
@@ -561,18 +601,15 @@ const styles = StyleSheet.create({
   lockedTitle: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#6B7280',
     marginBottom: 4,
   },
   lockedDescription: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#9CA3AF',
   },
   comingSoon: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
     textAlign: 'center',
     paddingVertical: 32,
   },

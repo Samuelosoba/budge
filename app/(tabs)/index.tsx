@@ -10,7 +10,7 @@ import {
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Plus, MoveHorizontal as MoreHorizontal } from 'lucide-react-native';
+import { Plus, MoreHorizontal, Eye, EyeOff } from 'lucide-react-native';
 import { useState } from 'react';
 
 const { width } = Dimensions.get('window');
@@ -55,9 +55,43 @@ export default function DashboardScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Balance Overview</Text>
-          <TouchableOpacity style={styles.addButton}>
-            <Plus size={20} color={theme.text} />
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => setHideBalances(!hideBalances)}
+          >
+            {hideBalances ? (
+              <EyeOff size={20} color={theme.text} />
+            ) : (
+              <Eye size={20} color={theme.text} />
+            )}
           </TouchableOpacity>
+        </View>
+
+        {/* Account Summary Cards */}
+        <View style={styles.accountCards}>
+          <View style={[styles.accountCard, { backgroundColor: theme.card }]}>
+            <View style={styles.accountRow}>
+              <View style={[styles.accountIcon, { backgroundColor: '#3B82F6' }]} />
+              <Text style={[styles.accountName, { color: theme.text }]}>Checking</Text>
+              <Text style={[styles.accountAmount, { color: theme.text }]}>{formatCurrency(2840)}</Text>
+            </View>
+          </View>
+          
+          <View style={[styles.accountCard, { backgroundColor: theme.card }]}>
+            <View style={styles.accountRow}>
+              <View style={[styles.accountIcon, { backgroundColor: '#10B981' }]} />
+              <Text style={[styles.accountName, { color: theme.text }]}>Savings</Text>
+              <Text style={[styles.accountAmount, { color: theme.text }]}>{formatCurrency(12500)}</Text>
+            </View>
+          </View>
+          
+          <View style={[styles.accountCard, { backgroundColor: theme.card }]}>
+            <View style={styles.accountRow}>
+              <View style={[styles.accountIcon, { backgroundColor: '#EF4444' }]} />
+              <Text style={[styles.accountName, { color: theme.text }]}>Credit</Text>
+              <Text style={[styles.accountAmount, { color: theme.text }]}>{formatCurrency(-850)}</Text>
+            </View>
+          </View>
         </View>
 
         {/* Main Balance Card */}
@@ -66,39 +100,6 @@ export default function DashboardScreen() {
             <Text style={styles.balanceTitle}>Balance Overview</Text>
             <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
           </View>
-          
-          <View style={styles.balanceActions}>
-            <View style={styles.circleButtons}>
-              <TouchableOpacity style={[styles.circleButton, { backgroundColor: theme.goldAccent }]}>
-                <Plus size={24} color={isDark ? '#1A1A1A' : '#FFFFFF'} />
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.circleButton, { backgroundColor: theme.circleButtonSecondary }]}>
-                <Text style={[styles.circleButtonText, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>28</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {/* Transaction List */}
-        <View style={styles.transactionsList}>
-          {recentTransactions.map((transaction, index) => (
-            <View key={transaction.id} style={[styles.transactionRow, { backgroundColor: theme.transactionRow }]}>
-              <View style={styles.transactionLeft}>
-                <View style={[styles.transactionIcon, { backgroundColor: transaction.category.color }]} />
-                <View style={styles.transactionInfo}>
-                  <Text style={[styles.transactionTitle, { color: theme.text }]}>
-                    {transaction.description}
-                  </Text>
-                  <Text style={[styles.transactionSubtitle, { color: theme.textSecondary }]}>
-                    {transaction.category.name}
-                  </Text>
-                </View>
-              </View>
-              <Text style={[styles.transactionAmount, { color: theme.text }]}>
-                {transaction.type === 'income' ? '+' : ''}{formatCurrency(transaction.amount)}
-              </Text>
-            </View>
-          ))}
         </View>
 
         {/* Action Buttons */}
@@ -114,7 +115,7 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Bottom Section */}
+        {/* Transaction Overview Section */}
         <View style={styles.bottomSection}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Transaction Overview</Text>
@@ -123,18 +124,21 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.overviewCard, { backgroundColor: theme.surface }]}>
+          <View style={[styles.overviewCard, { backgroundColor: theme.card }]}>
             <Text style={[styles.overviewText, { color: theme.textSecondary }]}>
-              Track your income and expenses. Manage your transactions, your
+              Track your income and expenses. Manage your transactions, your financial goals.
             </Text>
+            
             <View style={styles.overviewStats}>
               <View style={styles.statItem}>
                 <View style={[styles.chartPlaceholder, { backgroundColor: theme.primary }]} />
-                <Text style={[styles.statAmount, { color: theme.text }]}>7P22900</Text>
-                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>-22 DH</Text>
+                <Text style={[styles.statAmount, { color: theme.text }]}>{formatCurrency(totalExpenses)}</Text>
+                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Expenses</Text>
               </View>
               <View style={styles.statItem}>
                 <View style={[styles.chartIcon, { backgroundColor: theme.textSecondary }]} />
+                <Text style={[styles.statAmount, { color: theme.text }]}>{formatCurrency(totalIncome)}</Text>
+                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Income</Text>
               </View>
             </View>
           </View>
@@ -144,10 +148,35 @@ export default function DashboardScreen() {
               <Text style={[styles.finalButtonText, { color: theme.pillButtonText }]}>Collect</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.finalButton, { backgroundColor: theme.pillButton }]}>
-              <Text style={[styles.finalButtonText, { color: theme.pillButtonText }]}>Topshow</Text>
+              <Text style={[styles.finalButtonText, { color: theme.pillButtonText }]}>Transfer</Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Recent Transactions */}
+        {recentTransactions.length > 0 && (
+          <View style={styles.transactionsSection}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Transactions</Text>
+            {recentTransactions.slice(0, 3).map((transaction, index) => (
+              <View key={transaction.id} style={[styles.transactionRow, { backgroundColor: theme.transactionRow }]}>
+                <View style={styles.transactionLeft}>
+                  <View style={[styles.transactionIcon, { backgroundColor: transaction.category.color }]} />
+                  <View style={styles.transactionInfo}>
+                    <Text style={[styles.transactionTitle, { color: theme.text }]}>
+                      {transaction.description}
+                    </Text>
+                    <Text style={[styles.transactionSubtitle, { color: theme.textSecondary }]}>
+                      {transaction.category.name}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[styles.transactionAmount, { color: theme.text }]}>
+                  {transaction.type === 'income' ? '+' : ''}{formatCurrency(transaction.amount)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -217,6 +246,39 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  accountCards: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 8,
+  },
+  accountCard: {
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  accountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  accountIcon: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+  accountName: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+  accountAmount: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+  },
   mainBalanceCard: {
     marginHorizontal: 20,
     borderRadius: 24,
@@ -229,7 +291,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     elevation: 8,
   },
   balanceHeader: {
-    marginBottom: 24,
+    alignItems: 'center',
   },
   balanceTitle: {
     fontSize: 18,
@@ -241,74 +303,6 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontSize: 32,
     fontFamily: 'Inter-Bold',
     color: theme.balanceText,
-  },
-  balanceActions: {
-    alignItems: 'center',
-  },
-  circleButtons: {
-    flexDirection: 'row',
-    gap: 20,
-  },
-  circleButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  circleButtonText: {
-    fontSize: 18,
-    fontFamily: 'Inter-Bold',
-  },
-  transactionsList: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  transactionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  transactionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  transactionIcon: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 16,
-  },
-  transactionInfo: {
-    flex: 1,
-  },
-  transactionTitle: {
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
-    marginBottom: 2,
-  },
-  transactionSubtitle: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -344,6 +338,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   },
   bottomSection: {
     paddingHorizontal: 20,
+    marginBottom: 30,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -418,6 +413,51 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     elevation: 4,
   },
   finalButtonText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+  },
+  transactionsSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  transactionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  transactionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  transactionIcon: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 16,
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 2,
+  },
+  transactionSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+  },
+  transactionAmount: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
   },

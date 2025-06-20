@@ -106,6 +106,16 @@ export default function CategoryModal({ visible, onClose, type, editingCategory 
       onRequestClose={onClose}
     >
       <View style={styles.container}>
+        {/* Status Bar */}
+        <View style={styles.statusBar}>
+          <Text style={styles.time}>9:41</Text>
+          <View style={styles.statusIcons}>
+            <View style={styles.signalIcon} />
+            <View style={styles.wifiIcon} />
+            <View style={styles.batteryIcon} />
+          </View>
+        </View>
+
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -117,9 +127,9 @@ export default function CategoryModal({ visible, onClose, type, editingCategory 
           <TouchableOpacity
             onPress={handleSave}
             disabled={isLoading}
-            style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+            style={[styles.saveButton, { backgroundColor: theme.primary }, isLoading && styles.saveButtonDisabled]}
           >
-            <Text style={[styles.saveButtonText, isLoading && styles.saveButtonTextDisabled]}>
+            <Text style={[styles.saveButtonText, { color: isDark ? '#1A1A1A' : 'white' }, isLoading && styles.saveButtonTextDisabled]}>
               {isLoading ? 'Saving...' : 'Save'}
             </Text>
           </TouchableOpacity>
@@ -276,13 +286,48 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     flex: 1,
     backgroundColor: theme.background,
   },
+  statusBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 10,
+  },
+  time: {
+    fontSize: 17,
+    fontFamily: 'Inter-Bold',
+    color: theme.text,
+  },
+  statusIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  signalIcon: {
+    width: 18,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  wifiIcon: {
+    width: 15,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  batteryIcon: {
+    width: 24,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 24,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: theme.border,
   },
@@ -300,7 +345,6 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: theme.primary,
   },
   saveButtonDisabled: {
     opacity: 0.6,
@@ -308,7 +352,6 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: isDark ? '#1A1A1A' : 'white',
   },
   saveButtonTextDisabled: {
     color: 'rgba(255, 255, 255, 0.7)',

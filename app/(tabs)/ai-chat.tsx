@@ -10,11 +10,11 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApi } from '@/contexts/ApiContext';
-import { Send, Bot, User, Crown, TrendingUp, TrendingDown, AlertCircle, Lightbulb, DollarSign } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Send, Bot, User, Crown, TrendingUp, TrendingDown, DollarSign } from 'lucide-react-native';
 
 interface Message {
   id: string;
@@ -28,6 +28,7 @@ export default function AIChatScreen() {
   const { getTotalIncome, getTotalExpenses, getBalance } = useBudget();
   const { user, upgradeToPro, token } = useAuth();
   const { post } = useApi();
+  const { theme, isDark } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -115,13 +116,13 @@ export default function AIChatScreen() {
       ]}>
         <View style={styles.messageHeader}>
           {message.isBot ? (
-            <Bot size={20} color="#10B981" />
+            <Bot size={20} color={theme.primary} />
           ) : (
             <User size={20} color="white" />
           )}
           <Text style={[
             styles.messageSender,
-            { color: message.isBot ? '#10B981' : 'white' }
+            { color: message.isBot ? theme.primary : 'white' }
           ]}>
             {message.isBot ? 'AI Assistant' : 'You'}
           </Text>
@@ -129,14 +130,14 @@ export default function AIChatScreen() {
         
         <Text style={[
           styles.messageText,
-          { color: message.isBot ? '#1F2937' : 'white' }
+          { color: message.isBot ? theme.text : 'white' }
         ]}>
           {message.text}
         </Text>
         
         <Text style={[
           styles.messageTime,
-          { color: message.isBot ? '#9CA3AF' : 'rgba(255, 255, 255, 0.7)' }
+          { color: message.isBot ? theme.textTertiary : 'rgba(255, 255, 255, 0.7)' }
         ]}>
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
@@ -146,10 +147,10 @@ export default function AIChatScreen() {
             {message.suggestions.map((suggestion, index) => (
               <TouchableOpacity
                 key={index}
-                style={styles.suggestionButton}
+                style={[styles.suggestionButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
                 onPress={() => sendSuggestion(suggestion)}
               >
-                <Text style={styles.suggestionText}>{suggestion}</Text>
+                <Text style={[styles.suggestionText, { color: theme.textSecondary }]}>{suggestion}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -158,16 +159,25 @@ export default function AIChatScreen() {
     );
   };
 
+  const styles = createStyles(theme, isDark);
+
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <LinearGradient
-        colors={['#10B981', '#059669']}
-        style={styles.header}
-      >
-        <View style={styles.headerContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Status Bar */}
+        <View style={styles.statusBar}>
+          <Text style={styles.time}>9:41</Text>
+          <View style={styles.statusIcons}>
+            <View style={styles.signalIcon} />
+            <View style={styles.wifiIcon} />
+            <View style={styles.batteryIcon} />
+          </View>
+        </View>
+
+        {/* Header */}
+        <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Bot size={32} color="white" />
+            <Bot size={32} color={theme.primary} />
             <View>
               <Text style={styles.headerTitle}>AI Assistant</Text>
               <Text style={styles.headerSubtitle}>Your financial advisor</Text>
@@ -175,116 +185,151 @@ export default function AIChatScreen() {
           </View>
           {user?.isPro && (
             <View style={styles.proBadge}>
-              <Crown size={16} color="#10B981" />
-              <Text style={styles.proBadgeText}>Pro</Text>
+              <Crown size={16} color={theme.primary} />
+              <Text style={[styles.proBadgeText, { color: theme.primary }]}>Pro</Text>
             </View>
           )}
         </View>
-      </LinearGradient>
 
-      {/* Quick Stats */}
-      <View style={styles.statsBar}>
-        <View style={styles.statItem}>
-          <TrendingUp size={16} color="#10B981" />
-          <Text style={styles.statText}>{formatCurrency(getTotalIncome())}</Text>
+        {/* Quick Stats */}
+        <View style={styles.statsBar}>
+          <View style={styles.statItem}>
+            <TrendingUp size={16} color="#10B981" />
+            <Text style={[styles.statText, { color: theme.text }]}>{formatCurrency(getTotalIncome())}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <TrendingDown size={16} color="#EF4444" />
+            <Text style={[styles.statText, { color: theme.text }]}>{formatCurrency(getTotalExpenses())}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <DollarSign size={16} color={theme.textSecondary} />
+            <Text style={[styles.statText, { color: theme.text }]}>{formatCurrency(getBalance())}</Text>
+          </View>
         </View>
-        <View style={styles.statItem}>
-          <TrendingDown size={16} color="#EF4444" />
-          <Text style={styles.statText}>{formatCurrency(getTotalExpenses())}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <DollarSign size={16} color="#6B7280" />
-          <Text style={styles.statText}>{formatCurrency(getBalance())}</Text>
-        </View>
-      </View>
 
-      {/* Messages */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.messagesContainer}
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-      >
-        {messages.map(renderMessage)}
-        
-        {isTyping && (
-          <View style={[styles.messageContainer, styles.botMessage]}>
-            <View style={styles.messageHeader}>
-              <Bot size={20} color="#10B981" />
-              <Text style={[styles.messageSender, { color: '#10B981' }]}>
-                AI Assistant
+        {/* Messages */}
+        <View style={styles.messagesContainer}>
+          <ScrollView
+            ref={scrollViewRef}
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          >
+            {messages.map(renderMessage)}
+            
+            {isTyping && (
+              <View style={[styles.messageContainer, styles.botMessage]}>
+                <View style={styles.messageHeader}>
+                  <Bot size={20} color={theme.primary} />
+                  <Text style={[styles.messageSender, { color: theme.primary }]}>
+                    AI Assistant
+                  </Text>
+                </View>
+                <View style={styles.typingIndicator}>
+                  <View style={[styles.typingDot, { backgroundColor: theme.primary }]} />
+                  <View style={[styles.typingDot, { backgroundColor: theme.primary }]} />
+                  <View style={[styles.typingDot, { backgroundColor: theme.primary }]} />
+                </View>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+
+        {/* Pro Upgrade Banner */}
+        {!user?.isPro && (
+          <TouchableOpacity style={styles.proUpgradeBanner} onPress={upgradeToPro}>
+            <View style={[styles.proUpgradeGradient, { backgroundColor: theme.primary }]}>
+              <Crown size={20} color={isDark ? '#1A1A1A' : 'white'} />
+              <Text style={[styles.proUpgradeText, { color: isDark ? '#1A1A1A' : 'white' }]}>
+                Upgrade to Pro for advanced AI insights
               </Text>
             </View>
-            <View style={styles.typingIndicator}>
-              <View style={styles.typingDot} />
-              <View style={styles.typingDot} />
-              <View style={styles.typingDot} />
-            </View>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Pro Upgrade Banner */}
-      {!user?.isPro && (
-        <TouchableOpacity style={styles.proUpgradeBanner} onPress={upgradeToPro}>
-          <LinearGradient
-            colors={['#8B5CF6', '#7C3AED']}
-            style={styles.proUpgradeGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <Crown size={20} color="white" />
-            <Text style={styles.proUpgradeText}>
-              Upgrade to Pro for advanced AI insights
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      )}
-
-      {/* Input */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Ask me about your finances..."
-            placeholderTextColor="#9CA3AF"
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-            maxLength={500}
-          />
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              { opacity: inputText.trim() ? 1 : 0.5 }
-            ]}
-            onPress={() => sendMessage()}
-            disabled={!inputText.trim()}
-          >
-            <Send size={20} color="white" />
           </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+        )}
+
+        {/* Input */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={[styles.inputContainer, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
+            <TextInput
+              style={[styles.textInput, { color: theme.text, borderColor: theme.border }]}
+              placeholder="Ask me about your finances..."
+              placeholderTextColor={theme.textTertiary}
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              maxLength={500}
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                { 
+                  backgroundColor: theme.primary,
+                  opacity: inputText.trim() ? 1 : 0.5 
+                }
+              ]}
+              onPress={() => sendMessage()}
+              disabled={!inputText.trim()}
+            >
+              <Send size={20} color={isDark ? '#1A1A1A' : 'white'} />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.background,
   },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 16,
+  scrollContent: {
+    paddingBottom: 120, // Extra padding for mobile navigation
   },
-  headerContent: {
+  statusBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 10,
+  },
+  time: {
+    fontSize: 17,
+    fontFamily: 'Inter-Bold',
+    color: theme.text,
+  },
+  statusIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  signalIcon: {
+    width: 18,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  wifiIcon: {
+    width: 15,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  batteryIcon: {
+    width: 24,
+    height: 12,
+    backgroundColor: theme.text,
+    borderRadius: 2,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -293,19 +338,19 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontFamily: 'Inter-Bold',
-    color: 'white',
+    color: theme.text,
     marginLeft: 12,
   },
   headerSubtitle: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: theme.textSecondary,
     marginLeft: 12,
   },
   proBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: theme.surface,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -314,15 +359,20 @@ const styles = StyleSheet.create({
   proBadgeText: {
     fontSize: 12,
     fontFamily: 'Inter-Bold',
-    color: '#10B981',
   },
   statsBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: 'white',
+    backgroundColor: theme.card,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    marginHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   statItem: {
     flexDirection: 'row',
@@ -332,12 +382,12 @@ const styles = StyleSheet.create({
   statText: {
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
-    color: '#1F2937',
   },
   messagesContainer: {
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 16,
+    minHeight: 400,
   },
   messageContainer: {
     marginBottom: 16,
@@ -345,7 +395,7 @@ const styles = StyleSheet.create({
   },
   botMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: 'white',
+    backgroundColor: theme.card,
     borderRadius: 16,
     borderBottomLeftRadius: 4,
     padding: 12,
@@ -357,7 +407,7 @@ const styles = StyleSheet.create({
   },
   userMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#10B981',
+    backgroundColor: theme.primary,
     borderRadius: 16,
     borderBottomRightRadius: 4,
     padding: 12,
@@ -387,16 +437,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   suggestionButton: {
-    backgroundColor: '#F3F4F6',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     alignSelf: 'flex-start',
+    borderWidth: 1,
   },
   suggestionText: {
     fontSize: 13,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
   },
   typingIndicator: {
     flexDirection: 'row',
@@ -407,7 +456,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#10B981',
     opacity: 0.6,
   },
   proUpgradeBanner: {
@@ -422,36 +470,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
+    borderRadius: 12,
   },
   proUpgradeText: {
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
-    color: 'white',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: 'white',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
     gap: 12,
   },
   textInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#1F2937',
     maxHeight: 100,
   },
   sendButton: {
-    backgroundColor: '#10B981',
     width: 44,
     height: 44,
     borderRadius: 22,
