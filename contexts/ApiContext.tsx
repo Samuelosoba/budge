@@ -100,7 +100,9 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   };
 
   const put = async (endpoint: string, data: any, token?: string) => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
