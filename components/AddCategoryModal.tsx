@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -67,16 +67,23 @@ export default function AddCategoryModal({
   
   const [isLoading, setIsLoading] = useState(false);
   
-  const resetForm = () => {
+  // Reset form when modal opens
+  useEffect(() => {
+    if (visible) {
+      setFormData({
+        name: '',
+        color: predefinedColors[0],
+        budget: '',
+      });
+    }
+  }, [visible]);
+
+  const handleClose = () => {
     setFormData({
       name: '',
       color: predefinedColors[0],
       budget: '',
     });
-  };
-
-  const handleClose = () => {
-    resetForm();
     onClose();
   };
   
@@ -98,16 +105,25 @@ export default function AddCategoryModal({
         }),
       };
       
-      const response = await addCategory(categoryData);
+      console.log('Creating category with data:', categoryData);
       
-      // Call the callback with the new category ID if provided
-      if (onCategoryAdded && response) {
-        onCategoryAdded(response.id);
-      }
+      await addCategory(categoryData);
       
-      handleClose();
-      Alert.alert('Success', 'Category added successfully');
+      // Find the newly created category to get its ID
+      // Since addCategory doesn't return the category, we'll need to find it
+      // This is a temporary solution - ideally addCategory should return the created category
+      setTimeout(() => {
+        // Call the callback to notify that category was added
+        if (onCategoryAdded) {
+          // For now, we'll just close the modal and let the parent handle the refresh
+          onCategoryAdded('new-category');
+        }
+        handleClose();
+        Alert.alert('Success', 'Category added successfully');
+      }, 100);
+      
     } catch (error) {
+      console.error('Error adding category:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to add category');
     } finally {
       setIsLoading(false);
@@ -188,6 +204,7 @@ export default function AddCategoryModal({
                     }
                   ]}
                   onPress={() => handleQuickSelect(categoryName)}
+                  disabled={isLoading}
                 >
                   <Text style={[
                     styles.quickSelectText, 

@@ -75,13 +75,17 @@ export default function TransactionsScreen() {
   };
 
   const openAddCategoryModal = (type: 'income' | 'expense') => {
+    console.log('Opening add category modal for type:', type);
     setAddCategoryType(type);
     setAddCategoryModalVisible(true);
   };
 
   const handleCategoryAdded = (categoryId: string) => {
+    console.log('Category added with ID:', categoryId);
     // Auto-select the newly created category
     setFormData(prev => ({ ...prev, category: categoryId }));
+    // Close the add category modal
+    setAddCategoryModalVisible(false);
   };
 
   const handleSave = async () => {
@@ -169,7 +173,10 @@ export default function TransactionsScreen() {
           <Text style={styles.headerTitle}>Transactions</Text>
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={() => openAddCategoryModal('expense')}
+            onPress={() => {
+              console.log('Settings button pressed');
+              openAddCategoryModal('expense');
+            }}
           >
             <Settings size={20} color={theme.textSecondary} />
           </TouchableOpacity>
@@ -391,7 +398,10 @@ export default function TransactionsScreen() {
                 <Text style={[styles.formLabel, { color: theme.text }]}>Category</Text>
                 <TouchableOpacity
                   style={[styles.addCategoryButton, { backgroundColor: theme.primary }]}
-                  onPress={() => openAddCategoryModal(formData.type)}
+                  onPress={() => {
+                    console.log('Add category button pressed, type:', formData.type);
+                    openAddCategoryModal(formData.type);
+                  }}
                 >
                   <Plus size={16} color={isDark ? '#1A1A1A' : 'white'} />
                   <Text style={[styles.addCategoryButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>Add</Text>
@@ -461,7 +471,10 @@ export default function TransactionsScreen() {
       {/* Add Category Modal */}
       <AddCategoryModal
         visible={addCategoryModalVisible}
-        onClose={() => setAddCategoryModalVisible(false)}
+        onClose={() => {
+          console.log('Closing add category modal');
+          setAddCategoryModalVisible(false);
+        }}
         type={addCategoryType}
         onCategoryAdded={handleCategoryAdded}
       />

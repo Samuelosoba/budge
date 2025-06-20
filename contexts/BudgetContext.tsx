@@ -50,7 +50,7 @@ interface BudgetContextType {
   addTransaction: (transaction: Omit<Transaction, 'id' | 'category'> & { category: string }) => Promise<void>;
   updateTransaction: (transaction: Transaction) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
-  addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
+  addCategory: (category: Omit<Category, 'id'>) => Promise<Category>;
   updateCategory: (category: Category) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
   addBankAccount: (account: Omit<BankAccount, 'id'>) => Promise<void>;
@@ -237,7 +237,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addCategory = async (categoryData: Omit<Category, 'id'>) => {
+  const addCategory = async (categoryData: Omit<Category, 'id'>): Promise<Category> => {
     if (!token) throw new Error('No authentication token');
 
     try {
@@ -255,6 +255,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         categories: [...prev.categories, newCategory],
       }));
+
+      return newCategory;
     } catch (error) {
       console.error('Error adding category:', error);
       throw error;
