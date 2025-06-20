@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useBudget, Transaction } from '@/contexts/BudgetContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import CategoryModal from '@/components/CategoryModal';
+import AddCategoryModal from '@/components/AddCategoryModal';
 import { Plus, Search, TrendingUp, TrendingDown, CreditCard as Edit, Trash2, Calendar, DollarSign, FileText, Settings } from 'lucide-react-native';
 
 export default function TransactionsScreen() {
@@ -26,8 +26,8 @@ export default function TransactionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<'all' | 'income' | 'expense'>('all');
   const [modalVisible, setModalVisible] = useState(false);
-  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-  const [categoryModalType, setCategoryModalType] = useState<'income' | 'expense'>('expense');
+  const [addCategoryModalVisible, setAddCategoryModalVisible] = useState(false);
+  const [addCategoryType, setAddCategoryType] = useState<'income' | 'expense'>('expense');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   
   // Form state
@@ -74,9 +74,14 @@ export default function TransactionsScreen() {
     setModalVisible(true);
   };
 
-  const openCategoryModal = (type: 'income' | 'expense') => {
-    setCategoryModalType(type);
-    setCategoryModalVisible(true);
+  const openAddCategoryModal = (type: 'income' | 'expense') => {
+    setAddCategoryType(type);
+    setAddCategoryModalVisible(true);
+  };
+
+  const handleCategoryAdded = (categoryId: string) => {
+    // Auto-select the newly created category
+    setFormData(prev => ({ ...prev, category: categoryId }));
   };
 
   const handleSave = async () => {
@@ -164,7 +169,7 @@ export default function TransactionsScreen() {
           <Text style={styles.headerTitle}>Transactions</Text>
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={() => openCategoryModal('expense')}
+            onPress={() => openAddCategoryModal('expense')}
           >
             <Settings size={20} color={theme.textSecondary} />
           </TouchableOpacity>
@@ -386,7 +391,7 @@ export default function TransactionsScreen() {
                 <Text style={[styles.formLabel, { color: theme.text }]}>Category</Text>
                 <TouchableOpacity
                   style={[styles.addCategoryButton, { backgroundColor: theme.primary }]}
-                  onPress={() => openCategoryModal(formData.type)}
+                  onPress={() => openAddCategoryModal(formData.type)}
                 >
                   <Plus size={16} color={isDark ? '#1A1A1A' : 'white'} />
                   <Text style={[styles.addCategoryButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>Add</Text>
@@ -453,11 +458,12 @@ export default function TransactionsScreen() {
         </View>
       </Modal>
 
-      {/* Category Modal */}
-      <CategoryModal
-        visible={categoryModalVisible}
-        onClose={() => setCategoryModalVisible(false)}
-        type={categoryModalType}
+      {/* Add Category Modal */}
+      <AddCategoryModal
+        visible={addCategoryModalVisible}
+        onClose={() => setAddCategoryModalVisible(false)}
+        type={addCategoryType}
+        onCategoryAdded={handleCategoryAdded}
       />
     </View>
   );
