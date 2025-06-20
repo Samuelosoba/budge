@@ -10,7 +10,7 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-import { X, Plus, Tag, DollarSign, Edit, Trash2 } from 'lucide-react-native';
+import { X, Plus, Tag, DollarSign, CreditCard as Edit, Trash2 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useBudget, Category } from '@/contexts/BudgetContext';
 
