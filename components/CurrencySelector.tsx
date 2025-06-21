@@ -14,7 +14,6 @@ import { X, Search, Check, DollarSign } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCurrency, SUPPORTED_CURRENCIES, Currency } from '@/contexts/CurrencyContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useApi } from '@/contexts/ApiContext';
 
 const { width } = Dimensions.get('window');
 
@@ -25,9 +24,8 @@ interface CurrencySelectorProps {
 
 export default function CurrencySelector({ visible, onClose }: CurrencySelectorProps) {
   const { theme, isDark } = useTheme();
-  const { currency, setCurrency } = useCurrency();
+  const { currency, updateUserCurrency } = useCurrency();
   const { token } = useAuth();
-  const { put } = useApi();
   const [searchQuery, setSearchQuery] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -44,18 +42,8 @@ export default function CurrencySelector({ visible, onClose }: CurrencySelectorP
 
     setIsUpdating(true);
     try {
-      // Update currency locally
-      await setCurrency(selectedCurrency);
-      
-      // Update currency on server if user is logged in
-      if (token) {
-        try {
-          await put('/auth/currency', { currency: selectedCurrency.code }, token);
-        } catch (error) {
-          console.error('Failed to update currency on server:', error);
-          // Don't show error to user as local update succeeded
-        }
-      }
+      // Update currency with server sync
+      await updateUserCurrency(selectedCurrency.code, token || undefined);
       
       onClose();
       

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApi } from './ApiContext';
+import { useCurrency } from './CurrencyContext';
 
 interface User {
   id: string;
@@ -8,6 +9,7 @@ interface User {
   name: string;
   isPro: boolean;
   monthlyBudget: number;
+  currency?: string;
 }
 
 interface AuthContextType {
@@ -43,12 +45,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (storedToken && storedUser) {
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
           
-          // Verify token is still valid
+          // Verify token is still valid and sync user data
           try {
             const response = await get('/auth/me', storedToken);
-            setUser(response.user);
+            const updatedUser = response.user;
+            setUser(updatedUser);
+            await AsyncStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
           } catch (error) {
             // Token is invalid, clear stored data
             await clearStoredAuth();

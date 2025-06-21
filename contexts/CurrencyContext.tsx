@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useApi } from './ApiContext';
 
 export interface Currency {
   code: string;
@@ -41,7 +42,7 @@ interface CurrencyContextType {
   setCurrency: (currency: Currency) => void;
   formatCurrency: (amount: number, options?: { showSymbol?: boolean; compact?: boolean }) => string;
   convertAmount: (amount: number, fromCurrency: string, toCurrency: string) => Promise<number>;
-  updateUserCurrency: (currencyCode: string) => Promise<void>;
+  updateUserCurrency: (currencyCode: string, token?: string) => Promise<void>;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -50,6 +51,7 @@ const CURRENCY_STORAGE_KEY = 'budge_selected_currency';
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [currency, setCurrencyState] = useState<Currency>(SUPPORTED_CURRENCIES[0]); // Default to USD
+  const { put } = useApi();
 
   // Load saved currency on app start
   useEffect(() => {
@@ -79,12 +81,22 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateUserCurrency = async (currencyCode: string) => {
+  const updateUserCurrency = async (currencyCode: string, token?: string) => {
     try {
-      // Update local state
+      // Update local state first
       const newCurrency = SUPPORTED_CURRENCIES.find(c => c.code === currencyCode);
       if (newCurrency) {
         await setCurrency(newCurrency);
+      }
+
+      // Update on server if token is provided
+      if (token) {
+        try {
+          await put('/auth/currency', { currency: currencyCode }, token);
+        } catch (error) {
+          console.error('Failed to update currency on server:', error);
+          // Don't throw error as local update succeeded
+        }
       }
     } catch (error) {
       console.error('Error updating user currency:', error);
@@ -103,6 +115,16 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
           : amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
         
         return showSymbol ? `₦${formattedAmount}` : formattedAmount;
+      }
+
+      // Special handling for other currencies with limited Intl support
+      const currenciesWithLimitedSupport = ['KES', 'GHS', 'EGP'];
+      if (currenciesWithLimitedSupport.includes(currency.code)) {
+        const formattedAmount = compact && Math.abs(amount) >= 1000 
+          ? formatCompactNumber(amount)
+          : amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        
+        return showSymbol ? `${currency.symbol}${formattedAmount}` : formattedAmount;
       }
 
       const formatter = new Intl.NumberFormat(currency.locale, {

@@ -137,6 +137,27 @@ export default function SettingsScreen() {
     );
   };
 
+  // Fixed: Close all modals properly to prevent iOS modal conflicts
+  const closeAllModals = () => {
+    setPrivacyModalVisible(false);
+    setDataExportModalVisible(false);
+    setSecurityModalVisible(false);
+    setThemeModalVisible(false);
+    setBudgetModalVisible(false);
+    setCategoryModalVisible(false);
+    setDeleteAccountModalVisible(false);
+    setCurrencySelectorVisible(false);
+  };
+
+  // Fixed: Handle export data with proper modal management for iOS
+  const handleExportData = () => {
+    // Close privacy modal first, then open export modal after a delay
+    setPrivacyModalVisible(false);
+    setTimeout(() => {
+      setDataExportModalVisible(true);
+    }, 300); // Give time for privacy modal to close
+  };
+
   const getThemeIcon = (mode: ThemeMode) => {
     switch (mode) {
       case 'light':
@@ -371,6 +392,7 @@ export default function SettingsScreen() {
         visible={budgetModalVisible}
         animationType="slide"
         presentationStyle="pageSheet"
+        onRequestClose={() => setBudgetModalVisible(false)}
       >
         <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
           <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
@@ -588,7 +610,7 @@ export default function SettingsScreen() {
                 </Text>
                 <TouchableOpacity 
                   style={[styles.privacyButton, { backgroundColor: theme.primary }]}
-                  onPress={() => setDataExportModalVisible(true)}
+                  onPress={handleExportData}
                 >
                   <Download size={16} color={isDark ? '#1A1A1A' : 'white'} />
                   <Text style={[styles.privacyButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
@@ -604,7 +626,12 @@ export default function SettingsScreen() {
                 </Text>
                 <TouchableOpacity 
                   style={[styles.privacyButton, { backgroundColor: '#EF4444' }]}
-                  onPress={() => setDeleteAccountModalVisible(true)}
+                  onPress={() => {
+                    setPrivacyModalVisible(false);
+                    setTimeout(() => {
+                      setDeleteAccountModalVisible(true);
+                    }, 300);
+                  }}
                 >
                   <Trash2 size={16} color="white" />
                   <Text style={[styles.privacyButtonText, { color: 'white' }]}>
@@ -675,23 +702,29 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      {/* Currency Selector Modal */}
-      <CurrencySelector
-        visible={currencySelectorVisible}
-        onClose={() => setCurrencySelectorVisible(false)}
-      />
+      {/* Currency Selector Modal - Fixed: Separate from other modals */}
+      {currencySelectorVisible && (
+        <CurrencySelector
+          visible={currencySelectorVisible}
+          onClose={() => setCurrencySelectorVisible(false)}
+        />
+      )}
 
-      {/* Data Export Modal */}
-      <DataExportModal
-        visible={dataExportModalVisible}
-        onClose={() => setDataExportModalVisible(false)}
-      />
+      {/* Data Export Modal - Fixed: Separate from other modals */}
+      {dataExportModalVisible && (
+        <DataExportModal
+          visible={dataExportModalVisible}
+          onClose={() => setDataExportModalVisible(false)}
+        />
+      )}
 
       {/* Category Management Modal */}
-      <CategoryManagementModal
-        visible={categoryModalVisible}
-        onClose={() => setCategoryModalVisible(false)}
-      />
+      {categoryModalVisible && (
+        <CategoryManagementModal
+          visible={categoryModalVisible}
+          onClose={() => setCategoryModalVisible(false)}
+        />
+      )}
     </View>
   );
 }
