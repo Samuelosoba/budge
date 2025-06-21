@@ -90,42 +90,42 @@ const lightTheme: ThemeColors = {
 };
 
 const darkTheme: ThemeColors = {
-  background: '#0F0F0F', // Deep black background
-  surface: '#1A1A1A',
-  surfaceSecondary: '#262626',
+  background: '#1A1A1A', // Very dark background matching the image
+  surface: '#2A2A2A', // Slightly lighter dark surface
+  surfaceSecondary: '#333333',
   
-  text: '#FFFFFF',
-  textSecondary: '#B3B3B3',
-  textTertiary: '#808080',
+  text: '#FFFFFF', // Pure white text
+  textSecondary: '#B8B8B8', // Light gray for secondary text
+  textTertiary: '#808080', // Medium gray for tertiary text
   
-  primary: '#D4AF37', // Bright gold for dark mode - much more prominent
-  primaryLight: '#F4D03F',
-  primaryDark: '#B7950B',
+  primary: '#D4AF37', // Elegant gold/champagne color from the image
+  primaryLight: '#E6C55A',
+  primaryDark: '#B8941F',
   
-  success: '#10B981',
-  warning: '#F59E0B',
-  error: '#EF4444',
+  success: '#4ADE80', // Subtle green for income
+  warning: '#FBBF24', // Muted yellow for warnings
+  error: '#F87171', // Soft red for expenses
   
-  border: '#404040',
+  border: '#404040', // Dark border
   
-  card: '#1A1A1A',
+  card: '#2A2A2A', // Dark card background
   
-  tabBar: '#1A1A1A',
-  tabBarActive: '#D4AF37', // Bright gold for active tab
-  tabBarInactive: '#808080',
+  tabBar: '#1A1A1A', // Same as background
+  tabBarActive: '#D4AF37', // Gold for active tab
+  tabBarInactive: '#808080', // Gray for inactive tabs
   
-  // Exact design elements for dark mode with prominent gold
-  balanceCard: 'linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%)', // Gradient dark card
-  balanceText: '#D4AF37', // Gold text for balance
-  circleButton: '#D4AF37', // Bright gold accent
-  circleButtonSecondary: '#404040',
-  pillButton: '#D4AF37',
-  pillButtonText: '#1A1A1A',
-  transactionRow: 'rgba(26, 26, 26, 0.95)',
-  statusBarBg: '#0F0F0F',
-  goldAccent: '#D4AF37', // Bright gold
-  navyBlue: '#2C3E50',
-  lightCream: '#F5F5F0',
+  // Exact design elements matching the image
+  balanceCard: '#2A2A2A', // Dark card with subtle difference from background
+  balanceText: '#FFFFFF', // White text on dark card
+  circleButton: '#D4AF37', // Gold accent for buttons
+  circleButtonSecondary: '#404040', // Dark gray for secondary buttons
+  pillButton: '#D4AF37', // Gold pill buttons
+  pillButtonText: '#1A1A1A', // Dark text on gold buttons
+  transactionRow: '#2A2A2A', // Dark transaction rows
+  statusBarBg: '#1A1A1A', // Dark status bar
+  goldAccent: '#D4AF37', // Primary gold accent
+  navyBlue: '#2C3E50', // Keep navy for contrast when needed
+  lightCream: '#F5F5F0', // Keep for light mode references
 };
 
 interface ThemeContextType {
