@@ -10,7 +10,8 @@ import {
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { ChartBar as BarChart3, ChartPie as PieChart, TrendingUp, Calendar, Crown, Lock, CircleArrowUp as ArrowUpCircle, CircleArrowDown as ArrowDownCircle, Activity, Target } from 'lucide-react-native';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { ChartBar as BarChart3, ChartPie as PieChart, TrendingUp, Calendar, Crown, Lock, CircleArrowUp as ArrowUpCircle, CircleArrowDown as ArrowDownCircle, Activity, Target, LineChart, BarChart2 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -18,14 +19,9 @@ export default function AnalyticsScreen() {
   const { state, getTotalIncome, getTotalExpenses } = useBudget();
   const { user, upgradeToPro } = useAuth();
   const { theme, isDark } = useTheme();
+  const { formatCurrency } = useCurrency();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
+  const [selectedChartType, setSelectedChartType] = useState<'pie' | 'bar' | 'line'>('pie');
 
   // Category spending data
   const categoryData = state.categories
@@ -113,6 +109,118 @@ export default function AnalyticsScreen() {
     </View>
   );
 
+  const renderChart = () => {
+    if (categoryData.length === 0) {
+      return (
+        <View style={[styles.emptyChart, { backgroundColor: theme.card }]}>
+          <Text style={[styles.emptyChartText, { color: theme.textSecondary }]}>No expense data available</Text>
+        </View>
+      );
+    }
+
+    switch (selectedChartType) {
+      case 'pie':
+        return (
+          <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
+            {/* Donut Chart Representation */}
+            <View style={styles.donutChart}>
+              <View style={styles.donutContainer}>
+                {categoryData.slice(0, 5).map((item, index) => {
+                  const percentage = (item.spent / totalExpenses) * 100;
+                  return (
+                    <View key={index} style={styles.donutSegment}>
+                      <View 
+                        style={[
+                          styles.donutBar, 
+                          { 
+                            backgroundColor: item.color,
+                            width: `${Math.max(10, percentage)}%`
+                          }
+                        ]} 
+                      />
+                      <Text style={[styles.donutLabel, { color: theme.textSecondary }]} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      <Text style={[styles.donutPercentage, { color: theme.text }]}>
+                        {percentage.toFixed(0)}%
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+            
+            <View style={styles.legendContainer}>
+              {categoryData.slice(0, 5).map((item, index) => (
+                <View key={index} style={styles.legendItem}>
+                  <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+                  <Text style={[styles.legendText, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
+                  <Text style={[styles.legendAmount, { color: theme.text }]}>{formatCurrency(item.spent)}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        );
+
+      case 'bar':
+        return (
+          <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
+            <View style={styles.barChart}>
+              <View style={styles.chartContainer}>
+                {categoryData.slice(0, 5).map((item, index) => (
+                  <View key={index} style={styles.chartSegment}>
+                    <View 
+                      style={[
+                        styles.chartBar, 
+                        { 
+                          backgroundColor: item.color,
+                          height: Math.max(20, (item.spent / Math.max(...categoryData.map(c => c.spent))) * 120)
+                        }
+                      ]} 
+                    />
+                    <Text style={[styles.chartLabel, { color: theme.textSecondary }]} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    <Text style={[styles.chartAmount, { color: theme.textTertiary }]}>
+                      {formatCurrency(item.spent, { compact: true })}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+        );
+
+      case 'line':
+        return (
+          <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
+            <View style={styles.lineChart}>
+              <View style={styles.lineChartContainer}>
+                {monthlyTrend.map((item, index) => (
+                  <View key={index} style={styles.lineChartPoint}>
+                    <View 
+                      style={[
+                        styles.linePoint, 
+                        { 
+                          backgroundColor: theme.primary,
+                          bottom: Math.max(10, (item.amount / Math.max(maxMonthlySpending, 1)) * 100)
+                        }
+                      ]} 
+                    />
+                    <Text style={[styles.lineChartLabel, { color: theme.textSecondary }]}>{item.month}</Text>
+                  </View>
+                ))}
+              </View>
+              <Text style={[styles.lineChartTitle, { color: theme.text }]}>Monthly Spending Trend</Text>
+            </View>
+          </View>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   const styles = createStyles(theme, isDark);
 
   return (
@@ -191,90 +299,49 @@ export default function AnalyticsScreen() {
           </View>
         </View>
 
-        {/* Monthly Spending Trend Chart */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Activity size={24} color={theme.primary} />
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Monthly Spending Trend</Text>
-          </View>
-          
-          <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
-            <View style={styles.trendChart}>
-              <View style={styles.chartContainer}>
-                {monthlyTrend.map((item, index) => (
-                  <View key={index} style={styles.chartSegment}>
-                    <View 
-                      style={[
-                        styles.chartBar, 
-                        { 
-                          backgroundColor: theme.primary,
-                          height: Math.max(20, (item.amount / Math.max(maxMonthlySpending, 1)) * 120)
-                        }
-                      ]} 
-                    />
-                    <Text style={[styles.chartLabel, { color: theme.textSecondary }]}>{item.month}</Text>
-                    <Text style={[styles.chartAmount, { color: theme.textTertiary }]}>
-                      ${(item.amount / 1000).toFixed(1)}k
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Spending by Category */}
+        {/* Chart Type Selector */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <PieChart size={24} color={theme.primary} />
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Spending by Category</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Spending Analysis</Text>
           </View>
-          
-          {categoryData.length > 0 ? (
-            <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
-              {/* Donut Chart Representation */}
-              <View style={styles.donutChart}>
-                <View style={styles.donutContainer}>
-                  {categoryData.slice(0, 5).map((item, index) => {
-                    const percentage = (item.spent / totalExpenses) * 100;
-                    return (
-                      <View key={index} style={styles.donutSegment}>
-                        <View 
-                          style={[
-                            styles.donutBar, 
-                            { 
-                              backgroundColor: item.color,
-                              width: `${Math.max(10, percentage)}%`
-                            }
-                          ]} 
-                        />
-                        <Text style={[styles.donutLabel, { color: theme.textSecondary }]} numberOfLines={1}>
-                          {item.name}
-                        </Text>
-                        <Text style={[styles.donutPercentage, { color: theme.text }]}>
-                          {percentage.toFixed(0)}%
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-              
-              <View style={styles.legendContainer}>
-                {categoryData.slice(0, 5).map((item, index) => (
-                  <View key={index} style={styles.legendItem}>
-                    <View style={[styles.legendColor, { backgroundColor: item.color }]} />
-                    <Text style={[styles.legendText, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
-                    <Text style={[styles.legendAmount, { color: theme.text }]}>{formatCurrency(item.spent)}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : (
-            <View style={[styles.emptyChart, { backgroundColor: theme.card }]}>
-              <Text style={[styles.emptyChartText, { color: theme.textSecondary }]}>No expense data available</Text>
-            </View>
-          )}
+
+          <View style={styles.chartTypeSelector}>
+            {[
+              { key: 'pie', label: 'Pie Chart', icon: PieChart },
+              { key: 'bar', label: 'Bar Chart', icon: BarChart3 },
+              { key: 'line', label: 'Line Chart', icon: LineChart },
+            ].map((chartType) => (
+              <TouchableOpacity
+                key={chartType.key}
+                style={[
+                  styles.chartTypeButton,
+                  { 
+                    backgroundColor: selectedChartType === chartType.key ? theme.primary : theme.surface,
+                    borderColor: selectedChartType === chartType.key ? theme.primary : theme.border,
+                  }
+                ]}
+                onPress={() => setSelectedChartType(chartType.key as any)}
+              >
+                <chartType.icon 
+                  size={16} 
+                  color={selectedChartType === chartType.key ? (isDark ? '#1A1A1A' : 'white') : theme.textSecondary} 
+                />
+                <Text
+                  style={[
+                    styles.chartTypeButtonText,
+                    { 
+                      color: selectedChartType === chartType.key ? (isDark ? '#1A1A1A' : 'white') : theme.textSecondary 
+                    }
+                  ]}
+                >
+                  {chartType.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {renderChart()}
         </View>
 
         {/* Budget Progress */}
@@ -504,6 +571,32 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
   },
+  chartTypeSelector: {
+    flexDirection: 'row',
+    backgroundColor: theme.surface,
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  chartTypeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 4,
+  },
+  chartTypeButtonText: {
+    fontSize: Math.min(width * 0.03, 12),
+    fontFamily: 'Inter-SemiBold',
+  },
   chartCard: {
     borderRadius: 16,
     padding: 16,
@@ -522,7 +615,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Medium',
   },
-  trendChart: {
+  barChart: {
     marginBottom: 20,
   },
   chartContainer: {
@@ -579,6 +672,42 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontFamily: 'Inter-Bold',
     minWidth: 40,
     textAlign: 'right',
+  },
+  lineChart: {
+    marginBottom: 20,
+  },
+  lineChartContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    height: 120,
+    paddingHorizontal: 10,
+    position: 'relative',
+  },
+  lineChartPoint: {
+    alignItems: 'center',
+    flex: 1,
+    position: 'relative',
+    height: 120,
+  },
+  linePoint: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    position: 'absolute',
+  },
+  lineChartLabel: {
+    fontSize: Math.min(width * 0.03, 12),
+    fontFamily: 'Inter-Medium',
+    textAlign: 'center',
+    position: 'absolute',
+    bottom: -20,
+  },
+  lineChartTitle: {
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-SemiBold',
+    textAlign: 'center',
+    marginTop: 20,
   },
   legendContainer: {
     gap: 8,

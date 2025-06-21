@@ -15,10 +15,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBudget } from '@/contexts/BudgetContext';
 import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { useApi } from '@/contexts/ApiContext';
 import CategoryManagementModal from '@/components/CategoryManagementModal';
 import DataExportModal from '@/components/DataExportModal';
-import { User, Crown, Bell, Lock, Palette, CircleHelp as HelpCircle, LogOut, Target, Smartphone, Shield, Mail, ChevronRight, DollarSign, Plus, Sun, Moon, Monitor, Eye, EyeOff, Key, FileText, UserCheck, Download, Trash2 } from 'lucide-react-native';
+import CurrencySelector from '@/components/CurrencySelector';
+import { User, Crown, Bell, Lock, Palette, CircleHelp as HelpCircle, LogOut, Target, Smartphone, Shield, Mail, ChevronRight, DollarSign, Plus, Sun, Moon, Monitor, Eye, EyeOff, Key, FileText, UserCheck, Download, Trash2, Globe } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -26,6 +28,7 @@ export default function SettingsScreen() {
   const { user, signOut, upgradeToPro, token } = useAuth();
   const { state, setMonthlyBudget } = useBudget();
   const { theme, themeMode, setThemeMode, isDark } = useTheme();
+  const { currency, formatCurrency } = useCurrency();
   const { post, delete: deleteApi } = useApi();
   const [notifications, setNotifications] = useState(true);
   const [budgetModalVisible, setBudgetModalVisible] = useState(false);
@@ -35,6 +38,7 @@ export default function SettingsScreen() {
   const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
   const [dataExportModalVisible, setDataExportModalVisible] = useState(false);
   const [deleteAccountModalVisible, setDeleteAccountModalVisible] = useState(false);
+  const [currencySelectorVisible, setCurrencySelectorVisible] = useState(false);
   const [newBudget, setNewBudget] = useState(state.monthlyBudget.toString());
   const [isUpdatingBudget, setIsUpdatingBudget] = useState(false);
   const [deleteAccountData, setDeleteAccountData] = useState({
@@ -131,13 +135,6 @@ export default function SettingsScreen() {
         },
       ]
     );
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
   };
 
   const getThemeIcon = (mode: ThemeMode) => {
@@ -271,6 +268,18 @@ export default function SettingsScreen() {
         {/* Appearance Settings */}
         <SettingsSection title="Appearance">
           <SettingsItem
+            icon={<Globe size={24} color="#059669" />}
+            title="Currency"
+            subtitle={`${currency.name} (${currency.symbol})`}
+            onPress={() => setCurrencySelectorVisible(true)}
+            rightElement={
+              <View style={styles.currencyPreview}>
+                <Text style={[styles.currencySymbol, { color: theme.primary }]}>{currency.symbol}</Text>
+              </View>
+            }
+          />
+
+          <SettingsItem
             icon={<Palette size={24} color="#EC4899" />}
             title="Theme"
             subtitle={getThemeLabel(themeMode)}
@@ -382,7 +391,7 @@ export default function SettingsScreen() {
             </Text>
             
             <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <DollarSign size={20} color={theme.textSecondary} style={styles.inputIcon} />
+              <Text style={[styles.currencySymbolInput, { color: theme.textSecondary }]}>{currency.symbol}</Text>
               <TextInput
                 style={[styles.input, { color: theme.text }]}
                 placeholder="0.00"
@@ -666,6 +675,12 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
+      {/* Currency Selector Modal */}
+      <CurrencySelector
+        visible={currencySelectorVisible}
+        onClose={() => setCurrencySelectorVisible(false)}
+      />
+
       {/* Data Export Modal */}
       <DataExportModal
         visible={dataExportModalVisible}
@@ -810,6 +825,13 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   disabledText: {
     color: '#9CA3AF',
   },
+  currencyPreview: {
+    padding: 8,
+  },
+  currencySymbol: {
+    fontSize: Math.min(width * 0.04, 16),
+    fontFamily: 'Inter-Bold',
+  },
   themePreview: {
     padding: 8,
   },
@@ -881,6 +903,11 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-SemiBold',
     paddingVertical: 16,
+  },
+  currencySymbolInput: {
+    fontSize: Math.min(width * 0.045, 18),
+    fontFamily: 'Inter-Bold',
+    marginRight: 12,
   },
   inputHint: {
     fontSize: Math.min(width * 0.035, 14),

@@ -9,8 +9,12 @@ import {
   Alert,
   Dimensions,
   ActivityIndicator,
+  Platform,
+  Share,
 } from 'react-native';
-import { X, Download, Calendar, FileText, ChartBar as BarChart3, ChartPie as PieChart } from 'lucide-react-native';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { X, Download, Calendar, FileText, ChartBar as BarChart3, ChartPie as PieChart, Share as ShareIcon } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApi } from '@/contexts/ApiContext';
@@ -80,17 +84,44 @@ export default function DataExportModal({ visible, onClose }: DataExportModalPro
         throw new Error(`Export failed: ${response.status}`);
       }
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `budge-export-${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const data = await response.text();
+      const fileName = `budge-export-${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
+
+      if (Platform.OS === 'web') {
+        // Web download
+        const blob = new Blob([data], { type: selectedFormat === 'json' ? 'application/json' : 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Mobile download using Expo FileSystem and Sharing
+        const fileUri = FileSystem.documentDirectory + fileName;
+        
+        await FileSystem.writeAsStringAsync(fileUri, data, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: selectedFormat === 'json' ? 'application/json' : 'text/csv',
+            dialogTitle: 'Export Your Financial Data',
+            UTI: selectedFormat === 'json' ? 'public.json' : 'public.comma-separated-values-text',
+          });
+        } else {
+          // Fallback to Share API
+          await Share.share({
+            title: 'Budge Data Export',
+            message: `Your financial data export is ready: ${fileName}`,
+            url: fileUri,
+          });
+        }
+      }
 
       Alert.alert(
         'Export Complete',
@@ -154,8 +185,10 @@ export default function DataExportModal({ visible, onClose }: DataExportModalPro
           >
             {isExporting ? (
               <ActivityIndicator size="small" color={isDark ? '#1A1A1A' : 'white'} />
-            ) : (
+            ) : Platform.OS === 'web' ? (
               <Download size={20} color={isDark ? '#1A1A1A' : 'white'} />
+            ) : (
+              <ShareIcon size={20} color={isDark ? '#1A1A1A' : 'white'} />
             )}
           </TouchableOpacity>
         </View>
@@ -288,12 +321,17 @@ export default function DataExportModal({ visible, onClose }: DataExportModalPro
             </View>
           </View>
 
-          {/* Privacy Notice */}
+          {/* Platform-specific Notice */}
           <View style={styles.section}>
             <View style={[styles.privacyNotice, { backgroundColor: theme.surface }]}>
-              <Text style={[styles.privacyTitle, { color: theme.text }]}>Privacy Notice</Text>
+              <Text style={[styles.privacyTitle, { color: theme.text }]}>
+                {Platform.OS === 'web' ? 'Download Notice' : 'Share Notice'}
+              </Text>
               <Text style={[styles.privacyText, { color: theme.textSecondary }]}>
-                Your exported data is generated securely and downloaded directly to your device. We don't store copies of your exported data on our servers.
+                {Platform.OS === 'web' 
+                  ? 'Your exported data will be downloaded directly to your device. We don\'t store copies of your exported data on our servers.'
+                  : 'Your exported data will be shared using your device\'s sharing options. You can save it to Files, email it, or share with other apps.'
+                }
               </Text>
             </View>
           </View>
