@@ -13,6 +13,7 @@ import {
 import { useBudget, Transaction } from '@/contexts/BudgetContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import AddCategoryModal from '@/components/AddCategoryModal';
+import CategoryModal from '@/components/CategoryModal';
 import { Plus, Search, TrendingUp, TrendingDown, CreditCard as Edit3, Trash2, Calendar, DollarSign, FileText, Tag } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -29,6 +30,7 @@ export default function TransactionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<'all' | 'income' | 'expense'>('all');
   const [modalVisible, setModalVisible] = useState(false);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [addCategoryModalVisible, setAddCategoryModalVisible] = useState(false);
   const [addCategoryType, setAddCategoryType] = useState<'income' | 'expense'>('expense');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -77,18 +79,31 @@ export default function TransactionsScreen() {
     setModalVisible(true);
   };
 
-  const openAddCategoryModal = (type: 'income' | 'expense') => {
+  const openCategoryModal = () => {
+    setCategoryModalVisible(true);
+  };
+
+  const handleCategorySelect = (categoryId: string) => {
+    setFormData(prev => ({ ...prev, category: categoryId }));
+    setCategoryModalVisible(false);
+  };
+
+  const handleAddCategoryFromModal = (type: 'income' | 'expense') => {
     setAddCategoryType(type);
-    setAddCategoryModalVisible(true);
+    setCategoryModalVisible(false); // Close category modal first
+    setTimeout(() => {
+      setAddCategoryModalVisible(true); // Then open add category modal
+    }, 300); // Small delay for smooth transition
   };
 
   const handleCategoryAdded = (categoryId: string) => {
-    // Refresh categories and auto-select the newly created category
-    const newCategory = state.categories.find(cat => cat.id === categoryId);
-    if (newCategory) {
-      setFormData(prev => ({ ...prev, category: categoryId }));
-    }
+    // Auto-select the newly created category
+    setFormData(prev => ({ ...prev, category: categoryId }));
     setAddCategoryModalVisible(false);
+    // Optionally reopen category modal to show the new category
+    setTimeout(() => {
+      setCategoryModalVisible(true);
+    }, 300);
   };
 
   const handleSave = async () => {
@@ -188,6 +203,12 @@ export default function TransactionsScreen() {
 
   const getCategories = (type: 'income' | 'expense') => {
     return state.categories.filter(cat => cat.type === type);
+  };
+
+  const getSelectedCategoryName = () => {
+    if (!formData.category) return 'Select category';
+    const category = state.categories.find(cat => cat.id === formData.category);
+    return category ? category.name : 'Select category';
   };
 
   const styles = createStyles(theme, isDark);
@@ -434,56 +455,20 @@ export default function TransactionsScreen() {
 
             {/* Category */}
             <View style={styles.formGroup}>
-              <View style={styles.categoryHeader}>
-                <Text style={[styles.formLabel, { color: theme.text }]}>Category *</Text>
-                <TouchableOpacity
-                  style={[styles.addCategoryButton, { backgroundColor: theme.primary }]}
-                  onPress={() => openAddCategoryModal(formData.type)}
-                >
-                  <Plus size={16} color={isDark ? '#1A1A1A' : 'white'} />
-                  <Text style={[styles.addCategoryButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>Add</Text>
-                </TouchableOpacity>
-              </View>
-              
-              {getCategories(formData.type).length > 0 ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScrollView}>
-                  <View style={styles.categoriesGrid}>
-                    {getCategories(formData.type).map((category) => (
-                      <TouchableOpacity
-                        key={category.id}
-                        style={[
-                          styles.categoryButton,
-                          { 
-                            backgroundColor: formData.category === category.id ? theme.primary : theme.surface,
-                            borderColor: formData.category === category.id ? theme.primary : theme.border,
-                          }
-                        ]}
-                        onPress={() => setFormData({ ...formData, category: category.id })}
-                      >
-                        <View 
-                          style={[styles.categoryColor, { backgroundColor: category.color }]}
-                        />
-                        <Text style={[
-                          styles.categoryButtonText,
-                          { color: formData.category === category.id ? (isDark ? '#1A1A1A' : 'white') : theme.textSecondary }
-                        ]} numberOfLines={1}>
-                          {category.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </ScrollView>
-              ) : (
-                <View style={[styles.noCategoriesContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                  <Tag size={24} color={theme.textTertiary} />
-                  <Text style={[styles.noCategoriesText, { color: theme.textSecondary }]}>
-                    No {formData.type} categories yet
-                  </Text>
-                  <Text style={[styles.noCategoriesSubtext, { color: theme.textTertiary }]}>
-                    Tap "Add" to create your first category
-                  </Text>
-                </View>
-              )}
+              <Text style={[styles.formLabel, { color: theme.text }]}>Category *</Text>
+              <TouchableOpacity
+                style={[styles.categorySelector, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                onPress={openCategoryModal}
+              >
+                <Tag size={20} color={theme.textSecondary} style={styles.inputIcon} />
+                <Text style={[
+                  styles.categorySelectorText, 
+                  { color: formData.category ? theme.text : theme.textTertiary }
+                ]} numberOfLines={1}>
+                  {getSelectedCategoryName()}
+                </Text>
+                <Plus size={20} color={theme.textSecondary} />
+              </TouchableOpacity>
             </View>
 
             {/* Date */}
@@ -520,6 +505,16 @@ export default function TransactionsScreen() {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* Category Selection Modal */}
+      <CategoryModal
+        visible={categoryModalVisible}
+        onClose={() => setCategoryModalVisible(false)}
+        type={formData.type}
+        selectedCategory={formData.category}
+        onCategorySelect={handleCategorySelect}
+        onAddCategory={handleAddCategoryFromModal}
+      />
 
       {/* Add Category Modal */}
       <AddCategoryModal
@@ -724,24 +719,6 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     marginBottom: 12,
   },
-  categoryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  addCategoryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  addCategoryButtonText: {
-    fontSize: Math.min(width * 0.03, 12),
-    fontFamily: 'Inter-Bold',
-  },
   typeButtons: {
     flexDirection: 'row',
     gap: 12,
@@ -777,52 +754,18 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontFamily: 'Inter-Regular',
     paddingVertical: 16,
   },
-  categoriesScrollView: {
-    maxHeight: 120,
-  },
-  categoriesGrid: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingRight: 20,
-  },
-  categoryButton: {
+  categorySelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    minWidth: 100,
-    maxWidth: width * 0.4,
-  },
-  categoryColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
-  },
-  categoryButtonText: {
-    fontSize: Math.min(width * 0.035, 14),
-    fontFamily: 'Inter-Medium',
-    flex: 1,
-  },
-  noCategoriesContainer: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 20,
     borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     borderWidth: 1,
-    borderStyle: 'dashed',
   },
-  noCategoriesText: {
+  categorySelectorText: {
+    flex: 1,
     fontSize: Math.min(width * 0.04, 16),
-    fontFamily: 'Inter-SemiBold',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  noCategoriesSubtext: {
-    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
-    textAlign: 'center',
+    marginRight: 12,
   },
 });
