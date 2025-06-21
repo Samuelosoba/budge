@@ -15,23 +15,33 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBudget } from '@/contexts/BudgetContext';
 import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
+import { useApi } from '@/contexts/ApiContext';
 import CategoryManagementModal from '@/components/CategoryManagementModal';
-import { User, Crown, Bell, Lock, Palette, CircleHelp as HelpCircle, LogOut, Target, Smartphone, Shield, Mail, ChevronRight, DollarSign, Plus, Sun, Moon, Monitor, Eye, EyeOff, Key, FileText, UserCheck } from 'lucide-react-native';
+import DataExportModal from '@/components/DataExportModal';
+import { User, Crown, Bell, Lock, Palette, CircleHelp as HelpCircle, LogOut, Target, Smartphone, Shield, Mail, ChevronRight, DollarSign, Plus, Sun, Moon, Monitor, Eye, EyeOff, Key, FileText, UserCheck, Download, Trash2 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
 export default function SettingsScreen() {
-  const { user, signOut, upgradeToPro } = useAuth();
+  const { user, signOut, upgradeToPro, token } = useAuth();
   const { state, setMonthlyBudget } = useBudget();
   const { theme, themeMode, setThemeMode, isDark } = useTheme();
+  const { post, delete: deleteApi } = useApi();
   const [notifications, setNotifications] = useState(true);
   const [budgetModalVisible, setBudgetModalVisible] = useState(false);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [securityModalVisible, setSecurityModalVisible] = useState(false);
   const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
+  const [dataExportModalVisible, setDataExportModalVisible] = useState(false);
+  const [deleteAccountModalVisible, setDeleteAccountModalVisible] = useState(false);
   const [newBudget, setNewBudget] = useState(state.monthlyBudget.toString());
   const [isUpdatingBudget, setIsUpdatingBudget] = useState(false);
+  const [deleteAccountData, setDeleteAccountData] = useState({
+    email: '',
+    password: '',
+  });
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -75,6 +85,52 @@ export default function SettingsScreen() {
     } finally {
       setIsUpdatingBudget(false);
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deleteAccountData.email || !deleteAccountData.password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (deleteAccountData.email !== user?.email) {
+      Alert.alert('Error', 'Email does not match your account email');
+      return;
+    }
+
+    Alert.alert(
+      'Delete Account',
+      'This action cannot be undone. All your data will be permanently deleted.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Forever',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeletingAccount(true);
+            try {
+              await deleteApi('/privacy/account', token, {
+                confirmEmail: deleteAccountData.email,
+                password: deleteAccountData.password,
+              });
+              
+              Alert.alert(
+                'Account Deleted',
+                'Your account and all data have been permanently deleted.',
+                [{ text: 'OK', onPress: signOut }]
+              );
+            } catch (error) {
+              console.error('Delete account error:', error);
+              Alert.alert('Error', 'Failed to delete account. Please try again.');
+            } finally {
+              setIsDeletingAccount(false);
+              setDeleteAccountModalVisible(false);
+              setDeleteAccountData({ email: '', password: '' });
+            }
+          },
+        },
+      ]
+    );
   };
 
   const formatCurrency = (amount: number) => {
@@ -519,12 +575,13 @@ export default function SettingsScreen() {
               <View style={styles.privacyItem}>
                 <Text style={[styles.privacyItemTitle, { color: theme.text }]}>Data Export</Text>
                 <Text style={[styles.privacyItemDescription, { color: theme.textSecondary }]}>
-                  Download all your data in a portable format. This includes transactions, categories, and account settings.
+                  Download all your data in a portable format. This includes transactions, categories, and account settings with visual analytics.
                 </Text>
                 <TouchableOpacity 
                   style={[styles.privacyButton, { backgroundColor: theme.primary }]}
-                  onPress={() => Alert.alert('Data Export', 'Data export functionality coming soon!')}
+                  onPress={() => setDataExportModalVisible(true)}
                 >
+                  <Download size={16} color={isDark ? '#1A1A1A' : 'white'} />
                   <Text style={[styles.privacyButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
                     Export My Data
                   </Text>
@@ -538,15 +595,9 @@ export default function SettingsScreen() {
                 </Text>
                 <TouchableOpacity 
                   style={[styles.privacyButton, { backgroundColor: '#EF4444' }]}
-                  onPress={() => Alert.alert(
-                    'Delete Account',
-                    'Are you sure you want to permanently delete your account? This action cannot be undone.',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'Delete', style: 'destructive', onPress: () => Alert.alert('Account Deletion', 'Account deletion functionality coming soon!') }
-                    ]
-                  )}
+                  onPress={() => setDeleteAccountModalVisible(true)}
                 >
+                  <Trash2 size={16} color="white" />
                   <Text style={[styles.privacyButtonText, { color: 'white' }]}>
                     Delete Account
                   </Text>
@@ -556,6 +607,70 @@ export default function SettingsScreen() {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* Delete Account Modal */}
+      <Modal
+        visible={deleteAccountModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setDeleteAccountModalVisible(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <TouchableOpacity onPress={() => setDeleteAccountModalVisible(false)} disabled={isDeletingAccount}>
+              <Text style={[styles.modalCancelButton, { color: theme.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Delete Account</Text>
+            <TouchableOpacity onPress={handleDeleteAccount} disabled={isDeletingAccount}>
+              <Text style={[styles.modalSaveButton, { color: isDeletingAccount ? theme.textTertiary : '#EF4444' }]}>
+                {isDeletingAccount ? 'Deleting...' : 'Delete'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.modalContent}>
+            <Text style={[styles.modalDescription, { color: theme.textSecondary }]}>
+              This action cannot be undone. All your data including transactions, categories, and settings will be permanently deleted.
+            </Text>
+            
+            <View style={styles.deleteAccountForm}>
+              <Text style={[styles.formLabel, { color: theme.text }]}>Confirm your email</Text>
+              <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <Mail size={20} color={theme.textSecondary} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  placeholder={user?.email}
+                  value={deleteAccountData.email}
+                  onChangeText={(text) => setDeleteAccountData(prev => ({ ...prev, email: text }))}
+                  keyboardType="email-address"
+                  placeholderTextColor={theme.textTertiary}
+                  editable={!isDeletingAccount}
+                />
+              </View>
+
+              <Text style={[styles.formLabel, { color: theme.text }]}>Confirm your password</Text>
+              <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <Lock size={20} color={theme.textSecondary} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  placeholder="Enter your password"
+                  value={deleteAccountData.password}
+                  onChangeText={(text) => setDeleteAccountData(prev => ({ ...prev, password: text }))}
+                  secureTextEntry
+                  placeholderTextColor={theme.textTertiary}
+                  editable={!isDeletingAccount}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Data Export Modal */}
+      <DataExportModal
+        visible={dataExportModalVisible}
+        onClose={() => setDataExportModalVisible(false)}
+      />
 
       {/* Category Management Modal */}
       <CategoryManagementModal
@@ -863,14 +978,25 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     fontFamily: 'Inter-Medium',
   },
   privacyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
     alignSelf: 'flex-start',
     marginTop: 8,
+    gap: 8,
   },
   privacyButtonText: {
     fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-SemiBold',
+  },
+  deleteAccountForm: {
+    gap: 16,
+  },
+  formLabel: {
+    fontSize: Math.min(width * 0.04, 16),
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 8,
   },
 });

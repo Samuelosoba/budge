@@ -26,7 +26,7 @@ interface ApiContextType {
   get: (endpoint: string, token?: string) => Promise<any>;
   post: (endpoint: string, data: any, token?: string) => Promise<any>;
   put: (endpoint: string, data: any, token?: string) => Promise<any>;
-  delete: (endpoint: string, token?: string) => Promise<any>;
+  delete: (endpoint: string, token?: string, data?: any) => Promise<any>;
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
@@ -114,16 +114,24 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const deleteMethod = async (endpoint: string, token?: string) => {
-    const headers: Record<string, string> = {};
+  const deleteMethod = async (endpoint: string, token?: string, data?: any) => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    return apiCall(endpoint, {
+    const options: RequestInit = {
       method: 'DELETE',
       headers,
-    });
+    };
+
+    if (data) {
+      options.body = JSON.stringify(data);
+    }
+
+    return apiCall(endpoint, options);
   };
 
   return (

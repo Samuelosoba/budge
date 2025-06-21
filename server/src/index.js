@@ -16,6 +16,7 @@ const bankAccountRoutes = require('./routes/bankAccounts');
 const aiChatRoutes = require('./routes/aiChat');
 const budgetRoutes = require('./routes/budget');
 const plaidRoutes = require('./routes/plaid');
+const privacyRoutes = require('./routes/privacy');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -148,6 +149,7 @@ app.get('/api/health', (req, res) => {
     memory: process.memoryUsage(),
     mongodb:
       mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    openai: process.env.OPENAI_API_KEY ? 'configured' : 'not configured',
   });
 });
 
@@ -159,6 +161,7 @@ app.use('/api/bank-accounts', bankAccountRoutes);
 app.use('/api/ai-chat', aiChatRoutes);
 app.use('/api/budget', budgetRoutes);
 app.use('/api/plaid', plaidRoutes);
+app.use('/api/privacy', privacyRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

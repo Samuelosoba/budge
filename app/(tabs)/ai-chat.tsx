@@ -9,12 +9,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApi } from '@/contexts/ApiContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Send, Bot, User, Crown, TrendingUp, TrendingDown, DollarSign } from 'lucide-react-native';
+import { Send, Bot, User, Crown, TrendingUp, TrendingDown, DollarSign, BarChart3, PieChart, Activity } from 'lucide-react-native';
+
+const { width } = Dimensions.get('window');
 
 interface Message {
   id: string;
@@ -22,34 +25,52 @@ interface Message {
   isBot: boolean;
   timestamp: Date;
   suggestions?: string[];
+  chartData?: any;
 }
 
 export default function AIChatScreen() {
   const { getTotalIncome, getTotalExpenses, getBalance } = useBudget();
   const { user, upgradeToPro, token } = useAuth();
-  const { post } = useApi();
+  const { post, get } = useApi();
   const { theme, isDark } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [hasOpenAI, setHasOpenAI] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    // Initial greeting message
+    // Initial greeting message with enhanced capabilities
     const initialMessage: Message = {
       id: '1',
-      text: `Hi ${user?.name || 'there'}! I'm your AI financial assistant. I can help you understand your spending patterns, create budgets, and provide personalized financial advice. What would you like to know about your finances?`,
+      text: `Hi ${user?.name || 'there'}! I'm your AI financial assistant powered by advanced analytics. I can help you understand your spending patterns, create budgets, provide personalized financial advice, and generate visual insights from your data. What would you like to explore about your finances?`,
       isBot: true,
       timestamp: new Date(),
       suggestions: [
+        'Show me my spending breakdown',
         'How am I doing with my budget?',
-        'What category do I spend most on?',
-        'Give me savings tips',
-        'Analyze my spending trends'
+        'Give me personalized savings tips',
+        'Analyze my monthly trends',
+        'What are my top expense categories?'
       ]
     };
     setMessages([initialMessage]);
+    
+    // Check if OpenAI is available
+    checkOpenAIStatus();
   }, [user?.name]);
+
+  const checkOpenAIStatus = async () => {
+    try {
+      if (token) {
+        const response = await get('/ai-chat/insights', token);
+        setHasOpenAI(true);
+      }
+    } catch (error) {
+      console.log('OpenAI not available, using fallback responses');
+      setHasOpenAI(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -78,27 +99,62 @@ export default function AIChatScreen() {
         throw new Error('Please log in to use the AI assistant');
       }
 
+      // Enhanced API call with better error handling
       const response = await post('/ai-chat/chat', { message: textToSend }, token);
+      
+      // Get insights for chart data if available
+      let chartData = null;
+      try {
+        const insightsResponse = await get('/ai-chat/insights', token);
+        chartData = insightsResponse.chartData;
+      } catch (error) {
+        console.log('Chart data not available');
+      }
       
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
         text: response.message,
         isBot: true,
         timestamp: new Date(),
+        chartData: chartData,
       };
+
+      // Update OpenAI status
+      if (response.hasOpenAI !== undefined) {
+        setHasOpenAI(response.hasOpenAI);
+      }
 
       setMessages(prev => [...prev, botResponse]);
     } catch (error) {
       console.error('AI Chat error:', error);
       
-      const errorMessage: Message = {
+      // Enhanced fallback with better error messages
+      let errorMessage = "I'm here to help with your finances! ";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('log in')) {
+          errorMessage = 'Please log in to use the AI assistant.';
+        } else if (error.message.includes('Network')) {
+          errorMessage = 'Connection issue. Please check your internet and try again.';
+        } else {
+          errorMessage += 'I encountered a temporary issue, but I can still help you with basic financial insights.';
+        }
+      }
+
+      const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: error instanceof Error ? error.message : 'Sorry, I encountered an error. Please try again.',
+        text: errorMessage,
         isBot: true,
         timestamp: new Date(),
+        suggestions: [
+          'Show my current balance',
+          'What\'s my spending this month?',
+          'Give me savings tips',
+          'Help with budgeting'
+        ]
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, fallbackMessage]);
     } finally {
       setIsTyping(false);
     }
@@ -106,6 +162,32 @@ export default function AIChatScreen() {
 
   const sendSuggestion = (suggestion: string) => {
     sendMessage(suggestion);
+  };
+
+  const renderChartData = (chartData: any) => {
+    if (!chartData || !chartData.pieChart) return null;
+
+    return (
+      <View style={styles.chartContainer}>
+        <View style={styles.chartHeader}>
+          <PieChart size={16} color={theme.primary} />
+          <Text style={[styles.chartTitle, { color: theme.text }]}>Spending Breakdown</Text>
+        </View>
+        <View style={styles.pieChart}>
+          {chartData.pieChart.slice(0, 5).map((item: any, index: number) => (
+            <View key={index} style={styles.chartItem}>
+              <View style={[styles.chartColor, { backgroundColor: item.color }]} />
+              <Text style={[styles.chartLabel, { color: theme.text }]} numberOfLines={1}>
+                {item.name}
+              </Text>
+              <Text style={[styles.chartValue, { color: theme.textSecondary }]}>
+                {item.percentage.toFixed(1)}%
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
   };
 
   const renderMessage = (message: Message) => {
@@ -126,6 +208,11 @@ export default function AIChatScreen() {
           ]}>
             {message.isBot ? 'AI Assistant' : 'You'}
           </Text>
+          {message.isBot && hasOpenAI && (
+            <View style={styles.aiPoweredBadge}>
+              <Text style={[styles.aiPoweredText, { color: theme.primary }]}>GPT-4</Text>
+            </View>
+          )}
         </View>
         
         <Text style={[
@@ -134,6 +221,9 @@ export default function AIChatScreen() {
         ]}>
           {message.text}
         </Text>
+
+        {/* Render chart data if available */}
+        {message.chartData && renderChartData(message.chartData)}
         
         <Text style={[
           styles.messageTime,
@@ -170,7 +260,9 @@ export default function AIChatScreen() {
             <Bot size={32} color={theme.primary} />
             <View>
               <Text style={styles.headerTitle}>AI Assistant</Text>
-              <Text style={styles.headerSubtitle}>Your financial advisor</Text>
+              <Text style={styles.headerSubtitle}>
+                {hasOpenAI ? 'Powered by GPT-4' : 'Smart Financial Advisor'}
+              </Text>
             </View>
           </View>
           {user?.isPro && (
@@ -181,19 +273,38 @@ export default function AIChatScreen() {
           )}
         </View>
 
-        {/* Quick Stats */}
+        {/* Enhanced Quick Stats */}
         <View style={styles.statsBar}>
           <View style={styles.statItem}>
             <TrendingUp size={16} color="#10B981" />
             <Text style={[styles.statText, { color: theme.text }]}>{formatCurrency(getTotalIncome())}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Income</Text>
           </View>
           <View style={styles.statItem}>
             <TrendingDown size={16} color="#EF4444" />
             <Text style={[styles.statText, { color: theme.text }]}>{formatCurrency(getTotalExpenses())}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Expenses</Text>
           </View>
           <View style={styles.statItem}>
             <DollarSign size={16} color={theme.textSecondary} />
             <Text style={[styles.statText, { color: theme.text }]}>{formatCurrency(getBalance())}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Balance</Text>
+          </View>
+        </View>
+
+        {/* AI Capabilities Banner */}
+        <View style={[styles.capabilitiesBanner, { backgroundColor: theme.card }]}>
+          <View style={styles.capabilityItem}>
+            <BarChart3 size={20} color={theme.primary} />
+            <Text style={[styles.capabilityText, { color: theme.textSecondary }]}>Analytics</Text>
+          </View>
+          <View style={styles.capabilityItem}>
+            <PieChart size={20} color={theme.primary} />
+            <Text style={[styles.capabilityText, { color: theme.textSecondary }]}>Charts</Text>
+          </View>
+          <View style={styles.capabilityItem}>
+            <Activity size={20} color={theme.primary} />
+            <Text style={[styles.capabilityText, { color: theme.textSecondary }]}>Insights</Text>
           </View>
         </View>
 
@@ -230,7 +341,7 @@ export default function AIChatScreen() {
             <View style={[styles.proUpgradeGradient, { backgroundColor: theme.primary }]}>
               <Crown size={20} color={isDark ? '#1A1A1A' : 'white'} />
               <Text style={[styles.proUpgradeText, { color: isDark ? '#1A1A1A' : 'white' }]}>
-                Upgrade to Pro for advanced AI insights
+                Upgrade to Pro for advanced AI insights and unlimited analysis
               </Text>
             </View>
           </TouchableOpacity>
@@ -291,13 +402,13 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: Math.min(width * 0.06, 24),
     fontFamily: 'Inter-Bold',
     color: theme.text,
     marginLeft: 12,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
     color: theme.textSecondary,
     marginLeft: 12,
@@ -312,13 +423,38 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     gap: 4,
   },
   proBadgeText: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-Bold',
   },
   statsBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     backgroundColor: theme.card,
+    paddingVertical: 16,
+    marginHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  statItem: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-SemiBold',
+  },
+  statLabel: {
+    fontSize: Math.min(width * 0.03, 12),
+    fontFamily: 'Inter-Medium',
+  },
+  capabilitiesBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     paddingVertical: 12,
     marginHorizontal: 20,
     borderRadius: 12,
@@ -329,14 +465,13 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  statItem: {
-    flexDirection: 'row',
+  capabilityItem: {
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
-  statText: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
+  capabilityText: {
+    fontSize: Math.min(width * 0.03, 12),
+    fontFamily: 'Inter-Medium',
   },
   messagesContainer: {
     flex: 1,
@@ -373,19 +508,71 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginBottom: 6,
   },
   messageSender: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-SemiBold',
     marginLeft: 6,
   },
+  aiPoweredBadge: {
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  aiPoweredText: {
+    fontSize: Math.min(width * 0.025, 10),
+    fontFamily: 'Inter-Bold',
+  },
   messageText: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
     lineHeight: 20,
     marginBottom: 6,
   },
   messageTime: {
-    fontSize: 11,
+    fontSize: Math.min(width * 0.028, 11),
     fontFamily: 'Inter-Regular',
+  },
+  chartContainer: {
+    marginVertical: 12,
+    padding: 12,
+    backgroundColor: theme.surface,
+    borderRadius: 8,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  chartTitle: {
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-SemiBold',
+    marginLeft: 6,
+  },
+  pieChart: {
+    gap: 6,
+  },
+  chartItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  chartColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  chartLabel: {
+    flex: 1,
+    fontSize: Math.min(width * 0.032, 13),
+    fontFamily: 'Inter-Medium',
+  },
+  chartValue: {
+    fontSize: Math.min(width * 0.032, 13),
+    fontFamily: 'Inter-Bold',
+    minWidth: 40,
+    textAlign: 'right',
   },
   suggestions: {
     marginTop: 12,
@@ -399,7 +586,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderWidth: 1,
   },
   suggestionText: {
-    fontSize: 13,
+    fontSize: Math.min(width * 0.032, 13),
     fontFamily: 'Inter-Medium',
   },
   typingIndicator: {
@@ -428,8 +615,9 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderRadius: 12,
   },
   proUpgradeText: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-SemiBold',
+    flex: 1,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -445,7 +633,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Regular',
     maxHeight: 100,
   },
