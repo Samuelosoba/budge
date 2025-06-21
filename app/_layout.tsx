@@ -34,8 +34,8 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <CurrencyProvider>
-        <ApiProvider>
+      <ApiProvider>
+        <CurrencyProvider>
           <AuthProvider>
             <BudgetProvider>
               <Stack screenOptions={{ headerShown: false }}>
@@ -46,8 +46,8 @@ export default function RootLayout() {
               <StatusBar style="auto" />
             </BudgetProvider>
           </AuthProvider>
-        </ApiProvider>
-      </CurrencyProvider>
+        </CurrencyProvider>
+      </ApiProvider>
     </ThemeProvider>
   );
 }
