@@ -2,11 +2,46 @@ import { Tabs, Redirect } from 'expo-router';
 import { Chrome as Home, ChartBar as BarChart3, MessageCircle, Settings, Plus } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const { user, isLoading } = useAuth();
   const { theme, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  // Calculate tab bar height and padding for Android
+  const getTabBarStyle = () => {
+    const baseHeight = 80;
+    const basePaddingBottom = 20;
+    
+    if (Platform.OS === 'android') {
+      // For Android devices with three-button navigation
+      // Reduce bottom padding and adjust height to move tabs up
+      return {
+        backgroundColor: theme.tabBar,
+        borderTopWidth: isDark ? 0 : 1,
+        borderTopColor: isDark ? 'transparent' : theme.border,
+        paddingTop: 12,
+        paddingBottom: Math.max(8, insets.bottom - 12), // Reduced padding for Android
+        height: baseHeight - 10, // Slightly reduced height
+        paddingHorizontal: 20,
+        // Add margin bottom to lift the entire tab bar
+        marginBottom: Platform.OS === 'android' ? 8 : 0,
+      };
+    }
+    
+    // iOS styling remains the same
+    return {
+      backgroundColor: theme.tabBar,
+      borderTopWidth: isDark ? 0 : 1,
+      borderTopColor: isDark ? 'transparent' : theme.border,
+      paddingTop: 16,
+      paddingBottom: Math.max(basePaddingBottom, insets.bottom + 10),
+      height: baseHeight + Math.max(0, insets.bottom - 10),
+      paddingHorizontal: 20,
+    };
+  };
 
   if (isLoading) {
     return (
@@ -26,22 +61,14 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: theme.tabBarActive,
         tabBarInactiveTintColor: theme.tabBarInactive,
-        tabBarStyle: {
-          backgroundColor: theme.tabBar,
-          borderTopWidth: isDark ? 0 : 1, // Remove white line in dark mode
-          borderTopColor: isDark ? 'transparent' : theme.border,
-          paddingTop: 16,
-          paddingBottom: 40, // Increased padding for mobile navigation
-          height: 100, // Increased height for mobile
-          paddingHorizontal: 20,
-        },
+        tabBarStyle: getTabBarStyle(),
         tabBarLabelStyle: {
           fontSize: 11,
           fontFamily: 'Inter-Medium',
-          marginTop: 6,
+          marginTop: Platform.OS === 'android' ? 4 : 6, // Reduced margin for Android
         },
         tabBarIconStyle: {
-          marginBottom: 4,
+          marginBottom: Platform.OS === 'android' ? 2 : 4, // Reduced margin for Android
         },
       }}
     >
