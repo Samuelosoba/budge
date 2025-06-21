@@ -8,10 +8,13 @@ import {
   ScrollView,
   TextInput,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { X, Search, Check, DollarSign } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCurrency, SUPPORTED_CURRENCIES, Currency } from '@/contexts/CurrencyContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useApi } from '@/contexts/ApiContext';
 
 const { width } = Dimensions.get('window');
 
@@ -23,7 +26,10 @@ interface CurrencySelectorProps {
 export default function CurrencySelector({ visible, onClose }: CurrencySelectorProps) {
   const { theme, isDark } = useTheme();
   const { currency, setCurrency } = useCurrency();
+  const { token } = useAuth();
+  const { put } = useApi();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const filteredCurrencies = SUPPORTED_CURRENCIES.filter(curr =>
     curr.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -31,8 +37,42 @@ export default function CurrencySelector({ visible, onClose }: CurrencySelectorP
   );
 
   const handleCurrencySelect = async (selectedCurrency: Currency) => {
-    await setCurrency(selectedCurrency);
-    onClose();
+    if (selectedCurrency.code === currency.code) {
+      onClose();
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      // Update currency locally
+      await setCurrency(selectedCurrency);
+      
+      // Update currency on server if user is logged in
+      if (token) {
+        try {
+          await put('/auth/currency', { currency: selectedCurrency.code }, token);
+        } catch (error) {
+          console.error('Failed to update currency on server:', error);
+          // Don't show error to user as local update succeeded
+        }
+      }
+      
+      onClose();
+      
+      // Show success message
+      setTimeout(() => {
+        Alert.alert(
+          'Currency Updated',
+          `Your currency has been changed to ${selectedCurrency.name} (${selectedCurrency.symbol}). All amounts will now be displayed in this currency.`,
+          [{ text: 'OK' }]
+        );
+      }, 500);
+    } catch (error) {
+      console.error('Error updating currency:', error);
+      Alert.alert('Error', 'Failed to update currency. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const styles = createStyles(theme, isDark);
@@ -47,7 +87,7 @@ export default function CurrencySelector({ visible, onClose }: CurrencySelectorP
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton} disabled={isUpdating}>
             <X size={24} color={theme.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Select Currency</Text>
@@ -64,6 +104,7 @@ export default function CurrencySelector({ visible, onClose }: CurrencySelectorP
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholderTextColor={theme.textTertiary}
+              editable={!isUpdating}
             />
           </View>
         </View>
@@ -85,16 +126,18 @@ export default function CurrencySelector({ visible, onClose }: CurrencySelectorP
 
         {/* Currency List */}
         <ScrollView style={styles.currencyList} showsVerticalScrollIndicator={false}>
-          <Text style={[styles.listTitle, { color: theme.text }]}>All Currencies</Text>
+          <Text style={[styles.listTitle, { color: theme.text }]}>All Currencies ({filteredCurrencies.length})</Text>
           {filteredCurrencies.map((curr) => (
             <TouchableOpacity
               key={curr.code}
               style={[
                 styles.currencyItem,
                 { backgroundColor: theme.card },
-                currency.code === curr.code && { backgroundColor: theme.surface }
+                currency.code === curr.code && { backgroundColor: theme.surface },
+                isUpdating && styles.disabledItem
               ]}
               onPress={() => handleCurrencySelect(curr)}
+              disabled={isUpdating}
             >
               <View style={styles.currencyInfo}>
                 <Text style={[styles.currencySymbol, { color: theme.primary }]}>{curr.symbol}</Text>
@@ -109,6 +152,15 @@ export default function CurrencySelector({ visible, onClose }: CurrencySelectorP
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Update Notice */}
+        <View style={styles.noticeSection}>
+          <View style={[styles.notice, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.noticeText, { color: theme.textSecondary }]}>
+              Changing your currency will update all amounts throughout the app. Exchange rates are not applied - amounts remain the same in the new currency.
+            </Text>
+          </View>
+        </View>
       </View>
     </Modal>
   );
@@ -202,6 +254,9 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  disabledItem: {
+    opacity: 0.6,
+  },
   currencyInfo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -222,5 +277,19 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   currencyName: {
     fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
+  },
+  noticeSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  notice: {
+    borderRadius: 12,
+    padding: 16,
+  },
+  noticeText: {
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-Regular',
+    lineHeight: 20,
+    textAlign: 'center',
   },
 });

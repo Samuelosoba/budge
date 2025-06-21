@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema({
     default: 3000,
     min: [0, 'Budget cannot be negative']
   },
+  currency: {
+    type: String,
+    default: 'USD',
+    enum: ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'NGN', 'BRL', 'MXN', 'KRW', 'SGD', 'HKD', 'ZAR', 'EGP', 'KES', 'GHS', 'NOK', 'SEK', 'DKK', 'PLN', 'CZK', 'HUF']
+  },
   preferences: {
     currency: {
       type: String,
@@ -44,6 +49,14 @@ const userSchema = new mongoose.Schema({
       type: String,
       enum: ['light', 'dark', 'auto'],
       default: 'auto'
+    },
+    analytics: {
+      type: Boolean,
+      default: true
+    },
+    marketing: {
+      type: Boolean,
+      default: false
     }
   },
   lastLogin: {

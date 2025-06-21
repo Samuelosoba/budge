@@ -10,7 +10,6 @@ import {
   Dimensions,
   ActivityIndicator,
   Platform,
-  Share,
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -99,38 +98,63 @@ export default function DataExportModal({ visible, onClose }: DataExportModalPro
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-      } else {
-        // Mobile download using Expo FileSystem and Sharing
-        const fileUri = FileSystem.documentDirectory + fileName;
         
-        await FileSystem.writeAsStringAsync(fileUri, data, {
-          encoding: FileSystem.EncodingType.UTF8,
-        });
+        Alert.alert(
+          'Export Complete',
+          `Your data has been downloaded as ${fileName}`,
+          [{ text: 'OK', onPress: onClose }]
+        );
+      } else {
+        // iOS/Android - Use FileSystem and Sharing
+        try {
+          // Create file in document directory
+          const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+          
+          // Write the data to file
+          await FileSystem.writeAsStringAsync(fileUri, data, {
+            encoding: FileSystem.EncodingType.UTF8,
+          });
 
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(fileUri, {
-            mimeType: selectedFormat === 'json' ? 'application/json' : 'text/csv',
-            dialogTitle: 'Export Your Financial Data',
-            UTI: selectedFormat === 'json' ? 'public.json' : 'public.comma-separated-values-text',
-          });
-        } else {
-          // Fallback to Share API
-          await Share.share({
-            title: 'Budge Data Export',
-            message: `Your financial data export is ready: ${fileName}`,
-            url: fileUri,
-          });
+          // Check if sharing is available
+          const isAvailable = await Sharing.isAvailableAsync();
+          
+          if (isAvailable) {
+            // Use Expo Sharing
+            await Sharing.shareAsync(fileUri, {
+              mimeType: selectedFormat === 'json' ? 'application/json' : 'text/csv',
+              dialogTitle: 'Save Your Financial Data Export',
+              UTI: selectedFormat === 'json' ? 'public.json' : 'public.comma-separated-values-text',
+            });
+            
+            Alert.alert(
+              'Export Complete',
+              `Your data has been exported successfully. You can save it to Files or share it with other apps.`,
+              [{ text: 'OK', onPress: onClose }]
+            );
+          } else {
+            // Fallback - just show success message
+            Alert.alert(
+              'Export Complete',
+              `Your data has been exported to: ${fileName}`,
+              [{ text: 'OK', onPress: onClose }]
+            );
+          }
+        } catch (fileError) {
+          console.error('File operation error:', fileError);
+          Alert.alert(
+            'Export Error',
+            'Unable to save the exported file. Please try again.',
+            [{ text: 'OK' }]
+          );
         }
       }
-
-      Alert.alert(
-        'Export Complete',
-        `Your data has been exported successfully as a ${selectedFormat.toUpperCase()} file.${selectedFormat === 'json' ? ' The file includes visual analytics and charts.' : ''}`,
-        [{ text: 'OK', onPress: onClose }]
-      );
     } catch (error) {
       console.error('Export error:', error);
-      Alert.alert('Export Failed', 'Unable to export data. Please try again.');
+      Alert.alert(
+        'Export Failed', 
+        'Unable to export data. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsExporting(false);
     }
@@ -325,12 +349,12 @@ export default function DataExportModal({ visible, onClose }: DataExportModalPro
           <View style={styles.section}>
             <View style={[styles.privacyNotice, { backgroundColor: theme.surface }]}>
               <Text style={[styles.privacyTitle, { color: theme.text }]}>
-                {Platform.OS === 'web' ? 'Download Notice' : 'Share Notice'}
+                {Platform.OS === 'web' ? 'Download Notice' : 'Export Notice'}
               </Text>
               <Text style={[styles.privacyText, { color: theme.textSecondary }]}>
                 {Platform.OS === 'web' 
                   ? 'Your exported data will be downloaded directly to your device. We don\'t store copies of your exported data on our servers.'
-                  : 'Your exported data will be shared using your device\'s sharing options. You can save it to Files, email it, or share with other apps.'
+                  : 'Your exported data will be saved and can be shared using your device\'s sharing options. You can save it to Files, email it, or share with other apps.'
                 }
               </Text>
             </View>

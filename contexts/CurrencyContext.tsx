@@ -18,11 +18,16 @@ export const SUPPORTED_CURRENCIES: Currency[] = [
   { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc', locale: 'de-CH' },
   { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', locale: 'zh-CN' },
   { code: 'INR', symbol: '₹', name: 'Indian Rupee', locale: 'en-IN' },
+  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira', locale: 'en-NG' },
   { code: 'BRL', symbol: 'R$', name: 'Brazilian Real', locale: 'pt-BR' },
   { code: 'MXN', symbol: '$', name: 'Mexican Peso', locale: 'es-MX' },
   { code: 'KRW', symbol: '₩', name: 'South Korean Won', locale: 'ko-KR' },
   { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar', locale: 'en-SG' },
   { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar', locale: 'en-HK' },
+  { code: 'ZAR', symbol: 'R', name: 'South African Rand', locale: 'en-ZA' },
+  { code: 'EGP', symbol: 'E£', name: 'Egyptian Pound', locale: 'ar-EG' },
+  { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling', locale: 'en-KE' },
+  { code: 'GHS', symbol: '₵', name: 'Ghanaian Cedi', locale: 'en-GH' },
   { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone', locale: 'nb-NO' },
   { code: 'SEK', symbol: 'kr', name: 'Swedish Krona', locale: 'sv-SE' },
   { code: 'DKK', symbol: 'kr', name: 'Danish Krone', locale: 'da-DK' },
@@ -36,6 +41,7 @@ interface CurrencyContextType {
   setCurrency: (currency: Currency) => void;
   formatCurrency: (amount: number, options?: { showSymbol?: boolean; compact?: boolean }) => string;
   convertAmount: (amount: number, fromCurrency: string, toCurrency: string) => Promise<number>;
+  updateUserCurrency: (currencyCode: string) => Promise<void>;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -73,10 +79,32 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUserCurrency = async (currencyCode: string) => {
+    try {
+      // Update local state
+      const newCurrency = SUPPORTED_CURRENCIES.find(c => c.code === currencyCode);
+      if (newCurrency) {
+        await setCurrency(newCurrency);
+      }
+    } catch (error) {
+      console.error('Error updating user currency:', error);
+      throw error;
+    }
+  };
+
   const formatCurrency = (amount: number, options: { showSymbol?: boolean; compact?: boolean } = {}) => {
     const { showSymbol = true, compact = false } = options;
 
     try {
+      // Special handling for Nigerian Naira and other currencies that might not have full Intl support
+      if (currency.code === 'NGN') {
+        const formattedAmount = compact && Math.abs(amount) >= 1000 
+          ? formatCompactNumber(amount)
+          : amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        
+        return showSymbol ? `₦${formattedAmount}` : formattedAmount;
+      }
+
       const formatter = new Intl.NumberFormat(currency.locale, {
         style: showSymbol ? 'currency' : 'decimal',
         currency: currency.code,
@@ -91,7 +119,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       // Fallback formatting if Intl.NumberFormat fails
       const formattedAmount = compact && Math.abs(amount) >= 1000 
         ? formatCompactNumber(amount)
-        : amount.toFixed(2);
+        : amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
       
       return showSymbol ? `${currency.symbol}${formattedAmount}` : formattedAmount;
     }
@@ -113,6 +141,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       setCurrency,
       formatCurrency,
       convertAmount,
+      updateUserCurrency,
     }}>
       {children}
     </CurrencyContext.Provider>

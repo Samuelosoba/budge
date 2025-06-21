@@ -14,6 +14,7 @@ import {
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { Eye, EyeOff, ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, TrendingDown, Calendar, Settings, Target, DollarSign } from 'lucide-react-native';
 import { router } from 'expo-router';
 
@@ -23,6 +24,7 @@ export default function DashboardScreen() {
   const { state, getTotalIncome, getTotalExpenses, getBalance, refreshData, setMonthlyBudget } = useBudget();
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
+  const { formatCurrency } = useCurrency();
   const [hideBalances, setHideBalances] = useState(false);
   const [selectedOverview, setSelectedOverview] = useState<'income' | 'expense'>('expense');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -34,14 +36,9 @@ export default function DashboardScreen() {
   const balance = getBalance();
   const budgetUsed = state.monthlyBudget > 0 ? (totalExpenses / state.monthlyBudget) * 100 : 0;
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrencyWithHide = (amount: number) => {
     if (hideBalances) return '••••';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return formatCurrency(amount);
   };
 
   const getGreeting = () => {
@@ -146,7 +143,7 @@ export default function DashboardScreen() {
             <Wallet size={24} color={isDark ? theme.primary : theme.balanceText} />
           </View>
           <Text style={[styles.balanceAmount, { color: isDark ? theme.primary : theme.balanceText }]}>
-            {formatCurrency(balance)}
+            {formatCurrencyWithHide(balance)}
           </Text>
           
           <View style={styles.balanceStats}>
@@ -156,7 +153,7 @@ export default function DashboardScreen() {
               </View>
               <View>
                 <Text style={[styles.statAmount, { color: isDark ? theme.text : theme.balanceText }]}>
-                  {formatCurrency(totalIncome)}
+                  {formatCurrencyWithHide(totalIncome)}
                 </Text>
                 <Text style={[styles.statLabel, { color: isDark ? theme.textSecondary : theme.balanceText }]}>Income</Text>
               </View>
@@ -170,7 +167,7 @@ export default function DashboardScreen() {
               </View>
               <View>
                 <Text style={[styles.statAmount, { color: isDark ? theme.text : theme.balanceText }]}>
-                  {formatCurrency(totalExpenses)}
+                  {formatCurrencyWithHide(totalExpenses)}
                 </Text>
                 <Text style={[styles.statLabel, { color: isDark ? theme.textSecondary : theme.balanceText }]}>Expenses</Text>
               </View>
@@ -197,7 +194,7 @@ export default function DashboardScreen() {
             <View style={styles.budgetHeader}>
               <Text style={[styles.budgetTitle, { color: theme.text }]}>Monthly Budget</Text>
               <Text style={[styles.budgetAmount, { color: theme.primary }]}>
-                {formatCurrency(state.monthlyBudget)}
+                {formatCurrencyWithHide(state.monthlyBudget)}
               </Text>
             </View>
             
@@ -215,7 +212,7 @@ export default function DashboardScreen() {
                 />
               </View>
               <Text style={[styles.budgetProgressText, { color: theme.textSecondary }]}>
-                {formatCurrency(totalExpenses)} of {formatCurrency(state.monthlyBudget)} used ({budgetUsed.toFixed(0)}%)
+                {formatCurrencyWithHide(totalExpenses)} of {formatCurrencyWithHide(state.monthlyBudget)} used ({budgetUsed.toFixed(0)}%)
               </Text>
             </View>
           </View>
@@ -270,7 +267,7 @@ export default function DashboardScreen() {
             <View style={styles.overviewStats}>
               <View style={styles.overviewStat}>
                 <Text style={[styles.overviewStatValue, { color: theme.text }]}>
-                  {formatCurrency(overviewTotal)}
+                  {formatCurrencyWithHide(overviewTotal)}
                 </Text>
                 <Text style={[styles.overviewStatLabel, { color: theme.textSecondary }]}>
                   Total {selectedOverview}
@@ -286,7 +283,7 @@ export default function DashboardScreen() {
               </View>
               <View style={styles.overviewStat}>
                 <Text style={[styles.overviewStatValue, { color: theme.text }]}>
-                  {overviewCount > 0 ? formatCurrency(overviewTotal / overviewCount) : '$0'}
+                  {overviewCount > 0 ? formatCurrencyWithHide(overviewTotal / overviewCount) : formatCurrency(0)}
                 </Text>
                 <Text style={[styles.overviewStatLabel, { color: theme.textSecondary }]}>
                   Average
@@ -327,7 +324,7 @@ export default function DashboardScreen() {
                       styles.transactionAmount,
                       { color: transaction.type === 'income' ? '#10B981' : theme.text }
                     ]}>
-                      {formatCurrency(transaction.amount)}
+                      {formatCurrencyWithHide(transaction.amount)}
                     </Text>
                   </View>
                   {index < topTransactions.length - 1 && (
@@ -374,7 +371,7 @@ export default function DashboardScreen() {
                       styles.transactionAmount,
                       { color: transaction.type === 'income' ? '#10B981' : theme.text }
                     ]}>
-                      {transaction.type === 'income' ? '+' : ''}{formatCurrency(transaction.amount)}
+                      {transaction.type === 'income' ? '+' : ''}{formatCurrencyWithHide(transaction.amount)}
                     </Text>
                   </View>
                   {index < recentTransactions.length - 1 && (
@@ -456,13 +453,13 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     paddingBottom: 24,
   },
   greeting: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Regular',
     color: theme.textSecondary,
     marginBottom: 4,
   },
   userName: {
-    fontSize: 24,
+    fontSize: Math.min(width * 0.06, 24),
     fontFamily: 'Inter-Bold',
     color: theme.text,
   },
@@ -496,12 +493,12 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginBottom: 8,
   },
   balanceLabel: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Medium',
     opacity: 0.8,
   },
   balanceAmount: {
-    fontSize: 36,
+    fontSize: Math.min(width * 0.09, 36),
     fontFamily: 'Inter-Bold',
     marginBottom: 24,
   },
@@ -524,12 +521,12 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginRight: 12,
   },
   statAmount: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Bold',
     marginBottom: 2,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-Medium',
     opacity: 0.7,
   },
@@ -550,11 +547,11 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: Math.min(width * 0.05, 20),
     fontFamily: 'Inter-Bold',
   },
   seeAllText: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-SemiBold',
   },
   budgetButton: {
@@ -566,7 +563,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     gap: 4,
   },
   budgetButtonText: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-Bold',
   },
   budgetCard: {
@@ -585,11 +582,11 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginBottom: 16,
   },
   budgetTitle: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-SemiBold',
   },
   budgetAmount: {
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-Bold',
   },
   budgetProgress: {
@@ -605,7 +602,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderRadius: 4,
   },
   budgetProgressText: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
   },
   overviewToggle: {
@@ -623,7 +620,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     gap: 4,
   },
   toggleButtonText: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-SemiBold',
   },
   overviewCard: {
@@ -644,12 +641,12 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     flex: 1,
   },
   overviewStatValue: {
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-Bold',
     marginBottom: 4,
   },
   overviewStatLabel: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-Medium',
     textAlign: 'center',
   },
@@ -683,16 +680,16 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     flex: 1,
   },
   transactionTitle: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-SemiBold',
     marginBottom: 2,
   },
   transactionCategory: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
   },
   transactionAmount: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Bold',
   },
   transactionDivider: {
@@ -710,7 +707,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     elevation: 3,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Medium',
   },
   emptyState: {
@@ -719,13 +716,13 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 24,
   },
   emptyStateTitle: {
-    fontSize: 20,
+    fontSize: Math.min(width * 0.05, 20),
     fontFamily: 'Inter-Bold',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtitle: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
     lineHeight: 24,
@@ -744,22 +741,22 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderBottomWidth: 1,
   },
   modalCancelButton: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Regular',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-Bold',
   },
   modalSaveButton: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Bold',
   },
   modalContent: {
     padding: 24,
   },
   modalDescription: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Regular',
     marginBottom: 24,
     lineHeight: 24,
@@ -777,12 +774,12 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-SemiBold',
     paddingVertical: 16,
   },
   inputHint: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
   },
 });

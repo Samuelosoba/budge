@@ -48,7 +48,8 @@ router.post('/register', [
         name: user.name,
         email: user.email,
         isPro: user.isPro,
-        monthlyBudget: user.monthlyBudget
+        monthlyBudget: user.monthlyBudget,
+        currency: user.currency || user.preferences?.currency || 'USD'
       }
     });
   } catch (error) {
@@ -97,7 +98,8 @@ router.post('/login', [
         name: user.name,
         email: user.email,
         isPro: user.isPro,
-        monthlyBudget: user.monthlyBudget
+        monthlyBudget: user.monthlyBudget,
+        currency: user.currency || user.preferences?.currency || 'USD'
       }
     });
   } catch (error) {
@@ -116,6 +118,7 @@ router.get('/me', auth, async (req, res) => {
         email: req.user.email,
         isPro: req.user.isPro,
         monthlyBudget: req.user.monthlyBudget,
+        currency: req.user.currency || req.user.preferences?.currency || 'USD',
         preferences: req.user.preferences
       }
     });
@@ -128,7 +131,8 @@ router.get('/me', auth, async (req, res) => {
 // Update user profile
 router.put('/profile', auth, [
   body('name').optional().trim().isLength({ min: 1, max: 50 }).withMessage('Name must be between 1 and 50 characters'),
-  body('monthlyBudget').optional().isFloat({ min: 0 }).withMessage('Budget must be a positive number')
+  body('monthlyBudget').optional().isFloat({ min: 0 }).withMessage('Budget must be a positive number'),
+  body('currency').optional().isIn(['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'NGN', 'BRL', 'MXN', 'KRW', 'SGD', 'HKD', 'ZAR', 'EGP', 'KES', 'GHS', 'NOK', 'SEK', 'DKK', 'PLN', 'CZK', 'HUF']).withMessage('Invalid currency code')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -137,11 +141,16 @@ router.put('/profile', auth, [
     }
 
     const updates = {};
-    const allowedUpdates = ['name', 'monthlyBudget'];
+    const allowedUpdates = ['name', 'monthlyBudget', 'currency'];
     
     allowedUpdates.forEach(field => {
       if (req.body[field] !== undefined) {
         updates[field] = req.body[field];
+        
+        // Also update preferences.currency if currency is updated
+        if (field === 'currency') {
+          updates['preferences.currency'] = req.body[field];
+        }
       }
     });
 
@@ -158,12 +167,52 @@ router.put('/profile', auth, [
         name: user.name,
         email: user.email,
         isPro: user.isPro,
-        monthlyBudget: user.monthlyBudget
+        monthlyBudget: user.monthlyBudget,
+        currency: user.currency || user.preferences?.currency || 'USD'
       }
     });
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Server error during profile update' });
+  }
+});
+
+// Update currency
+router.put('/currency', auth, [
+  body('currency').isIn(['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'NGN', 'BRL', 'MXN', 'KRW', 'SGD', 'HKD', 'ZAR', 'EGP', 'KES', 'GHS', 'NOK', 'SEK', 'DKK', 'PLN', 'CZK', 'HUF']).withMessage('Invalid currency code')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { currency } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { 
+        currency,
+        'preferences.currency': currency
+      },
+      { new: true, runValidators: true }
+    );
+
+    res.json({
+      message: 'Currency updated successfully',
+      currency: user.currency,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isPro: user.isPro,
+        monthlyBudget: user.monthlyBudget,
+        currency: user.currency
+      }
+    });
+  } catch (error) {
+    console.error('Update currency error:', error);
+    res.status(500).json({ error: 'Server error during currency update' });
   }
 });
 
@@ -183,7 +232,8 @@ router.post('/upgrade-pro', auth, async (req, res) => {
         name: user.name,
         email: user.email,
         isPro: user.isPro,
-        monthlyBudget: user.monthlyBudget
+        monthlyBudget: user.monthlyBudget,
+        currency: user.currency || user.preferences?.currency || 'USD'
       }
     });
   } catch (error) {
