@@ -13,7 +13,7 @@ import {
 import { useBudget, Transaction } from '@/contexts/BudgetContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import AddCategoryModal from '@/components/AddCategoryModal';
-import { Plus, Search, TrendingUp, TrendingDown, Edit3, Trash2, Calendar, DollarSign, FileText, Tag } from 'lucide-react-native';
+import { Plus, Search, TrendingUp, TrendingDown, CreditCard as Edit3, Trash2, Calendar, DollarSign, FileText, Tag } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
