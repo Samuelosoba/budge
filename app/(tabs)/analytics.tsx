@@ -11,7 +11,7 @@ import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { ChartBar as BarChart3, ChartPie as PieChart, TrendingUp, Calendar, Crown, Lock, CircleArrowUp as ArrowUpCircle, CircleArrowDown as ArrowDownCircle, Activity, Target, LineChart, BarChart2 } from 'lucide-react-native';
+import { ChartBar as BarChart3, ChartPie as PieChart, TrendingUp, Calendar, Crown, Lock, CircleArrowUp as ArrowUpCircle, CircleArrowDown as ArrowDownCircle, Activity, Target, ChartLine as LineChart, ChartBar as BarChart2 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
