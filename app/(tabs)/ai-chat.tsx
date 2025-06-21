@@ -15,7 +15,7 @@ import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApi } from '@/contexts/ApiContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Send, Bot, User, Crown, TrendingUp, TrendingDown, DollarSign, BarChart3, PieChart, Activity } from 'lucide-react-native';
+import { Send, Bot, User, Crown, TrendingUp, TrendingDown, DollarSign, ChartBar as BarChart3, ChartPie as PieChart, Activity } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 

@@ -10,7 +10,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
-import { X, Download, Calendar, FileText, BarChart3, PieChart } from 'lucide-react-native';
+import { X, Download, Calendar, FileText, ChartBar as BarChart3, ChartPie as PieChart } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApi } from '@/contexts/ApiContext';
