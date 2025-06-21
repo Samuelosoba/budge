@@ -89,6 +89,7 @@ export default function TransactionsScreen() {
   };
 
   const handleAddCategoryFromModal = (type: 'income' | 'expense') => {
+    console.log('Opening add category modal for type:', type);
     setAddCategoryType(type);
     setCategoryModalVisible(false); // Close category modal first
     setTimeout(() => {
@@ -97,13 +98,11 @@ export default function TransactionsScreen() {
   };
 
   const handleCategoryAdded = (categoryId: string) => {
+    console.log('Category added with ID:', categoryId);
     // Auto-select the newly created category
     setFormData(prev => ({ ...prev, category: categoryId }));
     setAddCategoryModalVisible(false);
-    // Optionally reopen category modal to show the new category
-    setTimeout(() => {
-      setCategoryModalVisible(true);
-    }, 300);
+    // Don't reopen category modal - user can see the selected category in the form
   };
 
   const handleSave = async () => {
@@ -201,10 +200,6 @@ export default function TransactionsScreen() {
     }).format(amount);
   };
 
-  const getCategories = (type: 'income' | 'expense') => {
-    return state.categories.filter(cat => cat.type === type);
-  };
-
   const getSelectedCategoryName = () => {
     if (!formData.category) return 'Select category';
     const category = state.categories.find(cat => cat.id === formData.category);
@@ -294,7 +289,7 @@ export default function TransactionsScreen() {
                   <Text style={[
                     styles.transactionAmount,
                     {
-                      color: transaction.type === 'income' ? '#10B981' : '#EF4444',
+                      color: transaction.type === 'income' ? '#4ADE80' : '#F87171',
                     },
                   ]} numberOfLines={1}>
                     {transaction.type === 'income' ? '+' : ''}{formatCurrency(transaction.amount)}
@@ -310,7 +305,7 @@ export default function TransactionsScreen() {
                       style={[styles.actionButton, { backgroundColor: theme.surface }]}
                       onPress={() => handleDelete(transaction.id)}
                     >
-                      <Trash2 size={16} color="#EF4444" />
+                      <Trash2 size={16} color="#F87171" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -377,13 +372,13 @@ export default function TransactionsScreen() {
                   style={[
                     styles.typeButton,
                     { 
-                      backgroundColor: formData.type === 'income' ? '#10B981' : theme.surface,
-                      borderColor: formData.type === 'income' ? '#10B981' : theme.border,
+                      backgroundColor: formData.type === 'income' ? '#4ADE80' : theme.surface,
+                      borderColor: formData.type === 'income' ? '#4ADE80' : theme.border,
                     }
                   ]}
                   onPress={() => setFormData({ ...formData, type: 'income', category: '' })}
                 >
-                  <TrendingUp size={20} color={formData.type === 'income' ? 'white' : '#10B981'} />
+                  <TrendingUp size={20} color={formData.type === 'income' ? 'white' : '#4ADE80'} />
                   <Text style={[
                     styles.typeButtonText,
                     { color: formData.type === 'income' ? 'white' : theme.textSecondary }
@@ -395,13 +390,13 @@ export default function TransactionsScreen() {
                   style={[
                     styles.typeButton,
                     { 
-                      backgroundColor: formData.type === 'expense' ? '#EF4444' : theme.surface,
-                      borderColor: formData.type === 'expense' ? '#EF4444' : theme.border,
+                      backgroundColor: formData.type === 'expense' ? '#F87171' : theme.surface,
+                      borderColor: formData.type === 'expense' ? '#F87171' : theme.border,
                     }
                   ]}
                   onPress={() => setFormData({ ...formData, type: 'expense', category: '' })}
                 >
-                  <TrendingDown size={20} color={formData.type === 'expense' ? 'white' : '#EF4444'} />
+                  <TrendingDown size={20} color={formData.type === 'expense' ? 'white' : '#F87171'} />
                   <Text style={[
                     styles.typeButtonText,
                     { color: formData.type === 'expense' ? 'white' : theme.textSecondary }
