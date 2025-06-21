@@ -3,15 +3,17 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TextInput,
   TouchableOpacity,
   ScrollView,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { X, Tag, DollarSign } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useBudget } from '@/contexts/BudgetContext';
+
+const { width } = Dimensions.get('window');
 
 interface AddCategoryModalProps {
   visible: boolean;
@@ -57,7 +59,7 @@ export default function AddCategoryModal({
   onCategoryAdded 
 }: AddCategoryModalProps) {
   const { theme, isDark } = useTheme();
-  const { addCategory } = useBudget();
+  const { addCategory, state } = useBudget();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -93,6 +95,16 @@ export default function AddCategoryModal({
       return;
     }
     
+    // Check for duplicate category names
+    const existingCategory = state.categories.find(
+      cat => cat.name.toLowerCase() === formData.name.trim().toLowerCase() && cat.type === type
+    );
+    
+    if (existingCategory) {
+      Alert.alert('Error', 'A category with this name already exists');
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const categoryData = {
@@ -107,20 +119,14 @@ export default function AddCategoryModal({
       
       console.log('Creating category with data:', categoryData);
       
-      await addCategory(categoryData);
+      const newCategory = await addCategory(categoryData);
       
-      // Find the newly created category to get its ID
-      // Since addCategory doesn't return the category, we'll need to find it
-      // This is a temporary solution - ideally addCategory should return the created category
-      setTimeout(() => {
-        // Call the callback to notify that category was added
-        if (onCategoryAdded) {
-          // For now, we'll just close the modal and let the parent handle the refresh
-          onCategoryAdded('new-category');
-        }
-        handleClose();
-        Alert.alert('Success', 'Category added successfully');
-      }, 100);
+      // Call the callback with the new category ID
+      if (onCategoryAdded && newCategory) {
+        onCategoryAdded(newCategory.id);
+      }
+      
+      handleClose();
       
     } catch (error) {
       console.error('Error adding category:', error);
@@ -137,156 +143,153 @@ export default function AddCategoryModal({
   const styles = createStyles(theme, isDark);
   
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
-    >
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <X size={24} color={theme.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            Add {type === 'income' ? 'Income' : 'Expense'} Category
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleClose} style={styles.closeButton} disabled={isLoading}>
+          <X size={24} color={theme.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          Add {type === 'income' ? 'Income' : 'Expense'} Category
+        </Text>
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={isLoading || !formData.name.trim()}
+          style={[
+            styles.saveButton, 
+            { backgroundColor: theme.primary },
+            (isLoading || !formData.name.trim()) && styles.saveButtonDisabled
+          ]}
+        >
+          <Text style={[
+            styles.saveButtonText, 
+            { color: isDark ? '#1A1A1A' : 'white' },
+            (isLoading || !formData.name.trim()) && styles.saveButtonTextDisabled
+          ]}>
+            {isLoading ? 'Adding...' : 'Add'}
           </Text>
-          <TouchableOpacity
-            onPress={handleSave}
-            disabled={isLoading || !formData.name.trim()}
-            style={[
-              styles.saveButton, 
-              { backgroundColor: theme.primary },
-              (isLoading || !formData.name.trim()) && styles.saveButtonDisabled
-            ]}
-          >
-            <Text style={[
-              styles.saveButtonText, 
-              { color: isDark ? '#1A1A1A' : 'white' },
-              (isLoading || !formData.name.trim()) && styles.saveButtonTextDisabled
-            ]}>
-              {isLoading ? 'Adding...' : 'Add'}
-            </Text>
-          </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
+      
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Category Preview */}
+        <View style={styles.previewSection}>
+          <View style={[styles.previewCard, { backgroundColor: theme.card }]}>
+            <View style={[styles.previewIcon, { backgroundColor: formData.color }]}>
+              <Tag size={24} color="white" />
+            </View>
+            <View style={styles.previewInfo}>
+              <Text style={[styles.previewName, { color: theme.text }]}>
+                {formData.name || 'Category Name'}
+              </Text>
+              <Text style={[styles.previewType, { color: theme.textSecondary }]}>
+                {type.charAt(0).toUpperCase() + type.slice(1)} Category
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Quick Select */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Quick Select</Text>
+          <View style={styles.quickSelectContainer}>
+            {quickCategories[type].map((categoryName, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.quickSelectChip, 
+                  { 
+                    backgroundColor: formData.name === categoryName ? theme.primary : theme.surface,
+                    borderColor: formData.name === categoryName ? theme.primary : theme.border,
+                  }
+                ]}
+                onPress={() => handleQuickSelect(categoryName)}
+                disabled={isLoading}
+              >
+                <Text style={[
+                  styles.quickSelectText, 
+                  { 
+                    color: formData.name === categoryName 
+                      ? (isDark ? '#1A1A1A' : 'white') 
+                      : theme.textSecondary 
+                  }
+                ]}>
+                  {categoryName}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
         
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Category Preview */}
-          <View style={styles.previewSection}>
-            <View style={[styles.previewCard, { backgroundColor: theme.card }]}>
-              <View style={[styles.previewIcon, { backgroundColor: formData.color }]}>
-                <Tag size={24} color="white" />
-              </View>
-              <View style={styles.previewInfo}>
-                <Text style={[styles.previewName, { color: theme.text }]}>
-                  {formData.name || 'Category Name'}
-                </Text>
-                <Text style={[styles.previewType, { color: theme.textSecondary }]}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)} Category
-                </Text>
-              </View>
-            </View>
+        {/* Category Name */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Category Name</Text>
+          <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Tag size={20} color={theme.textSecondary} style={styles.inputIcon} />
+            <TextInput
+              style={[styles.input, { color: theme.text }]}
+              placeholder="Enter category name"
+              placeholderTextColor={theme.textTertiary}
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
+              maxLength={50}
+              editable={!isLoading}
+            />
           </View>
-
-          {/* Quick Select */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Quick Select</Text>
-            <View style={styles.quickSelectContainer}>
-              {quickCategories[type].map((categoryName, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.quickSelectChip, 
-                    { 
-                      backgroundColor: formData.name === categoryName ? theme.primary : theme.surface,
-                      borderColor: formData.name === categoryName ? theme.primary : theme.border,
-                    }
-                  ]}
-                  onPress={() => handleQuickSelect(categoryName)}
-                  disabled={isLoading}
-                >
-                  <Text style={[
-                    styles.quickSelectText, 
-                    { 
-                      color: formData.name === categoryName 
-                        ? (isDark ? '#1A1A1A' : 'white') 
-                        : theme.textSecondary 
-                    }
-                  ]}>
-                    {categoryName}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+        </View>
+        
+        {/* Color Selection */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Color</Text>
+          <View style={styles.colorGrid}>
+            {predefinedColors.slice(0, 10).map((color) => (
+              <TouchableOpacity
+                key={color}
+                style={[
+                  styles.colorOption,
+                  { backgroundColor: color },
+                  formData.color === color && styles.selectedColor,
+                ]}
+                onPress={() => setFormData({ ...formData, color })}
+                disabled={isLoading}
+              >
+                {formData.color === color && (
+                  <View style={styles.colorCheckmark}>
+                    <Text style={styles.colorCheckmarkText}>✓</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
-          
-          {/* Category Name */}
+        </View>
+        
+        {/* Budget (for expense categories) */}
+        {type === 'expense' && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Category Name</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Monthly Budget (Optional)</Text>
             <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <Tag size={20} color={theme.textSecondary} style={styles.inputIcon} />
+              <DollarSign size={20} color={theme.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.text }]}
-                placeholder="Enter category name"
+                placeholder="0.00"
                 placeholderTextColor={theme.textTertiary}
-                value={formData.name}
-                onChangeText={(text) => setFormData({ ...formData, name: text })}
-                maxLength={50}
+                value={formData.budget}
+                onChangeText={(text) => {
+                  // Only allow numbers and decimal point
+                  const cleanText = text.replace(/[^0-9.]/g, '');
+                  setFormData({ ...formData, budget: cleanText });
+                }}
+                keyboardType="decimal-pad"
                 editable={!isLoading}
               />
             </View>
+            <Text style={[styles.inputHint, { color: theme.textTertiary }]}>
+              Set a monthly spending limit for this category
+            </Text>
           </View>
-          
-          {/* Color Selection */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Color</Text>
-            <View style={styles.colorGrid}>
-              {predefinedColors.slice(0, 10).map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  style={[
-                    styles.colorOption,
-                    { backgroundColor: color },
-                    formData.color === color && styles.selectedColor,
-                  ]}
-                  onPress={() => setFormData({ ...formData, color })}
-                  disabled={isLoading}
-                >
-                  {formData.color === color && (
-                    <View style={styles.colorCheckmark}>
-                      <Text style={styles.colorCheckmarkText}>✓</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-          
-          {/* Budget (for expense categories) */}
-          {type === 'expense' && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Monthly Budget (Optional)</Text>
-              <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-                <DollarSign size={20} color={theme.textSecondary} style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, { color: theme.text }]}
-                  placeholder="0.00"
-                  placeholderTextColor={theme.textTertiary}
-                  value={formData.budget}
-                  onChangeText={(text) => setFormData({ ...formData, budget: text })}
-                  keyboardType="numeric"
-                  editable={!isLoading}
-                />
-              </View>
-              <Text style={[styles.inputHint, { color: theme.textTertiary }]}>
-                Set a monthly spending limit for this category
-              </Text>
-            </View>
-          )}
-        </ScrollView>
-      </View>
-    </Modal>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -311,9 +314,12 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     backgroundColor: theme.surface,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-Bold',
     color: theme.text,
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 16,
   },
   saveButton: {
     paddingHorizontal: 16,
@@ -324,7 +330,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     opacity: 0.5,
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Bold',
   },
   saveButtonTextDisabled: {
@@ -360,19 +366,19 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     flex: 1,
   },
   previewName: {
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-Bold',
     marginBottom: 4,
   },
   previewType: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
   },
   section: {
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Bold',
     marginBottom: 16,
   },
@@ -389,7 +395,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginBottom: 8,
   },
   quickSelectText: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Medium',
   },
   inputContainer: {
@@ -404,12 +410,12 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Regular',
     paddingVertical: 16,
   },
   inputHint: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
     marginTop: 8,
   },
@@ -445,7 +451,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
   },
   colorCheckmarkText: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Bold',
     color: 'white',
   },

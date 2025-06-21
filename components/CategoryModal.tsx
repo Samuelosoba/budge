@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   ScrollView,
   Dimensions,
 } from 'react-native';
 import { X, Plus, Tag } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useBudget, Category } from '@/contexts/BudgetContext';
+import { useBudget } from '@/contexts/BudgetContext';
 
 const { width } = Dimensions.get('window');
 
@@ -38,7 +37,6 @@ export default function CategoryModal({
 
   const handleCategorySelect = (categoryId: string) => {
     onCategorySelect(categoryId);
-    onClose();
   };
 
   const handleAddCategory = () => {
@@ -48,87 +46,80 @@ export default function CategoryModal({
   const styles = createStyles(theme, isDark);
   
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <X size={24} color={theme.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            Select {type === 'income' ? 'Income' : 'Expense'} Category
-          </Text>
-          <TouchableOpacity
-            onPress={handleAddCategory}
-            style={[styles.addButton, { backgroundColor: theme.primary }]}
-          >
-            <Plus size={20} color={isDark ? '#1A1A1A' : 'white'} />
-          </TouchableOpacity>
-        </View>
-        
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {categories.length > 0 ? (
-            <View style={styles.categoriesGrid}>
-              {categories.map((category) => (
-                <TouchableOpacity
-                  key={category.id}
-                  style={[
-                    styles.categoryButton,
-                    { 
-                      backgroundColor: selectedCategory === category.id ? theme.primary : theme.surface,
-                      borderColor: selectedCategory === category.id ? theme.primary : theme.border,
-                    }
-                  ]}
-                  onPress={() => handleCategorySelect(category.id)}
-                >
-                  <View 
-                    style={[styles.categoryColor, { backgroundColor: category.color }]}
-                  />
-                  <Text style={[
-                    styles.categoryButtonText,
-                    { color: selectedCategory === category.id ? (isDark ? '#1A1A1A' : 'white') : theme.text }
-                  ]} numberOfLines={1}>
-                    {category.name}
-                  </Text>
-                  {category.budget && (
-                    <Text style={[
-                      styles.categoryBudget,
-                      { color: selectedCategory === category.id ? (isDark ? 'rgba(26, 26, 26, 0.7)' : 'rgba(255, 255, 255, 0.7)') : theme.textSecondary }
-                    ]} numberOfLines={1}>
-                      ${category.budget}/mo
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.emptyState}>
-              <Tag size={48} color={theme.textTertiary} />
-              <Text style={[styles.emptyStateTitle, { color: theme.text }]}>
-                No {type} categories yet
-              </Text>
-              <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
-                Create your first {type} category to get started
-              </Text>
-              <TouchableOpacity
-                style={[styles.createButton, { backgroundColor: theme.primary }]}
-                onPress={handleAddCategory}
-              >
-                <Plus size={20} color={isDark ? '#1A1A1A' : 'white'} />
-                <Text style={[styles.createButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
-                  Create Category
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </ScrollView>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <X size={24} color={theme.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          Select {type === 'income' ? 'Income' : 'Expense'} Category
+        </Text>
+        <TouchableOpacity
+          onPress={handleAddCategory}
+          style={[styles.addButton, { backgroundColor: theme.primary }]}
+        >
+          <Plus size={20} color={isDark ? '#1A1A1A' : 'white'} />
+        </TouchableOpacity>
       </View>
-    </Modal>
+      
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {categories.length > 0 ? (
+          <View style={styles.categoriesGrid}>
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                style={[
+                  styles.categoryButton,
+                  { 
+                    backgroundColor: selectedCategory === category.id ? theme.primary : theme.surface,
+                    borderColor: selectedCategory === category.id ? theme.primary : theme.border,
+                  }
+                ]}
+                onPress={() => handleCategorySelect(category.id)}
+              >
+                <View 
+                  style={[styles.categoryColor, { backgroundColor: category.color }]}
+                />
+                <Text style={[
+                  styles.categoryButtonText,
+                  { color: selectedCategory === category.id ? (isDark ? '#1A1A1A' : 'white') : theme.text }
+                ]} numberOfLines={1}>
+                  {category.name}
+                </Text>
+                {category.budget && (
+                  <Text style={[
+                    styles.categoryBudget,
+                    { color: selectedCategory === category.id ? (isDark ? 'rgba(26, 26, 26, 0.7)' : 'rgba(255, 255, 255, 0.7)') : theme.textSecondary }
+                  ]} numberOfLines={1}>
+                    ${category.budget}/mo
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <Tag size={48} color={theme.textTertiary} />
+            <Text style={[styles.emptyStateTitle, { color: theme.text }]}>
+              No {type} categories yet
+            </Text>
+            <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
+              Create your first {type} category to get started
+            </Text>
+            <TouchableOpacity
+              style={[styles.createButton, { backgroundColor: theme.primary }]}
+              onPress={handleAddCategory}
+            >
+              <Plus size={20} color={isDark ? '#1A1A1A' : 'white'} />
+              <Text style={[styles.createButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
+                Create Category
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 

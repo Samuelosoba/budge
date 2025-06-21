@@ -9,6 +9,7 @@ import {
   Modal,
   Alert,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useBudget, Transaction } from '@/contexts/BudgetContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -80,7 +81,10 @@ export default function TransactionsScreen() {
   };
 
   const openCategoryModal = () => {
-    setCategoryModalVisible(true);
+    // Ensure main modal is visible before opening category modal
+    if (modalVisible) {
+      setCategoryModalVisible(true);
+    }
   };
 
   const handleCategorySelect = (categoryId: string) => {
@@ -91,18 +95,30 @@ export default function TransactionsScreen() {
   const handleAddCategoryFromModal = (type: 'income' | 'expense') => {
     console.log('Opening add category modal for type:', type);
     setAddCategoryType(type);
-    setCategoryModalVisible(false); // Close category modal first
+    setCategoryModalVisible(false);
+    
+    // Use a longer delay for iOS to ensure proper modal transition
+    const delay = Platform.OS === 'ios' ? 500 : 300;
     setTimeout(() => {
-      setAddCategoryModalVisible(true); // Then open add category modal
-    }, 300); // Small delay for smooth transition
+      setAddCategoryModalVisible(true);
+    }, delay);
   };
 
   const handleCategoryAdded = (categoryId: string) => {
     console.log('Category added with ID:', categoryId);
-    // Auto-select the newly created category
-    setFormData(prev => ({ ...prev, category: categoryId }));
+    
+    // Find the newly created category
+    const newCategory = state.categories.find(cat => cat.id === categoryId);
+    if (newCategory) {
+      setFormData(prev => ({ ...prev, category: categoryId }));
+    }
+    
     setAddCategoryModalVisible(false);
-    // Don't reopen category modal - user can see the selected category in the form
+    
+    // Small delay before showing success message to ensure modal is closed
+    setTimeout(() => {
+      Alert.alert('Success', 'Category created and selected!');
+    }, 100);
   };
 
   const handleSave = async () => {
@@ -204,6 +220,21 @@ export default function TransactionsScreen() {
     if (!formData.category) return 'Select category';
     const category = state.categories.find(cat => cat.id === formData.category);
     return category ? category.name : 'Select category';
+  };
+
+  const closeAllModals = () => {
+    setCategoryModalVisible(false);
+    setAddCategoryModalVisible(false);
+    setModalVisible(false);
+    setEditingTransaction(null);
+    setFormData({
+      amount: '',
+      description: '',
+      category: '',
+      type: 'expense',
+      date: new Date().toISOString().split('T')[0],
+      notes: '',
+    });
   };
 
   const styles = createStyles(theme, isDark);
@@ -337,22 +368,12 @@ export default function TransactionsScreen() {
       <Modal
         visible={modalVisible}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
+        onRequestClose={closeAllModals}
       >
         <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
           <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-            <TouchableOpacity onPress={() => {
-              setModalVisible(false);
-              setEditingTransaction(null);
-              setFormData({
-                amount: '',
-                description: '',
-                category: '',
-                type: 'expense',
-                date: new Date().toISOString().split('T')[0],
-                notes: '',
-              });
-            }}>
+            <TouchableOpacity onPress={closeAllModals}>
               <Text style={[styles.modalCancelButton, { color: theme.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
             <Text style={[styles.modalTitle, { color: theme.text }]}>
@@ -499,25 +520,39 @@ export default function TransactionsScreen() {
             </View>
           </ScrollView>
         </View>
+
+        {/* Category Selection Modal - Nested inside main modal for iOS compatibility */}
+        <Modal
+          visible={categoryModalVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setCategoryModalVisible(false)}
+        >
+          <CategoryModal
+            visible={true}
+            onClose={() => setCategoryModalVisible(false)}
+            type={formData.type}
+            selectedCategory={formData.category}
+            onCategorySelect={handleCategorySelect}
+            onAddCategory={handleAddCategoryFromModal}
+          />
+        </Modal>
+
+        {/* Add Category Modal - Nested inside main modal for iOS compatibility */}
+        <Modal
+          visible={addCategoryModalVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setAddCategoryModalVisible(false)}
+        >
+          <AddCategoryModal
+            visible={true}
+            onClose={() => setAddCategoryModalVisible(false)}
+            type={addCategoryType}
+            onCategoryAdded={handleCategoryAdded}
+          />
+        </Modal>
       </Modal>
-
-      {/* Category Selection Modal */}
-      <CategoryModal
-        visible={categoryModalVisible}
-        onClose={() => setCategoryModalVisible(false)}
-        type={formData.type}
-        selectedCategory={formData.category}
-        onCategorySelect={handleCategorySelect}
-        onAddCategory={handleAddCategoryFromModal}
-      />
-
-      {/* Add Category Modal */}
-      <AddCategoryModal
-        visible={addCategoryModalVisible}
-        onClose={() => setAddCategoryModalVisible(false)}
-        type={addCategoryType}
-        onCategoryAdded={handleCategoryAdded}
-      />
     </View>
   );
 }
