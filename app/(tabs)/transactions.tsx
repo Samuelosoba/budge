@@ -8,11 +8,14 @@ import {
   TextInput,
   Modal,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { useBudget, Transaction } from '@/contexts/BudgetContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import AddCategoryModal from '@/components/AddCategoryModal';
-import { Plus, Search, TrendingUp, TrendingDown, CreditCard as Edit, Trash2, Calendar, DollarSign, FileText, Settings } from 'lucide-react-native';
+import { Plus, Search, TrendingUp, TrendingDown, CreditCard as Edit, Trash2, Calendar, DollarSign, FileText, Tag } from 'lucide-react-native';
+
+const { width } = Dimensions.get('window');
 
 export default function TransactionsScreen() {
   const { 
@@ -75,13 +78,11 @@ export default function TransactionsScreen() {
   };
 
   const openAddCategoryModal = (type: 'income' | 'expense') => {
-    console.log('Opening add category modal for type:', type);
     setAddCategoryType(type);
     setAddCategoryModalVisible(true);
   };
 
   const handleCategoryAdded = (categoryId: string) => {
-    console.log('Category added with ID:', categoryId);
     // Auto-select the newly created category
     setFormData(prev => ({ ...prev, category: categoryId }));
     // Close the add category modal
@@ -171,15 +172,6 @@ export default function TransactionsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Transactions</Text>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => {
-              console.log('Settings button pressed');
-              openAddCategoryModal('expense');
-            }}
-          >
-            <Settings size={20} color={theme.textSecondary} />
-          </TouchableOpacity>
         </View>
 
         {/* Search and Filter */}
@@ -242,10 +234,11 @@ export default function TransactionsScreen() {
                     { backgroundColor: transaction.category.color }
                   ]} />
                   <View style={styles.transactionDetails}>
-                    <Text style={[styles.transactionDescription, { color: theme.text }]}>{transaction.description}</Text>
-                    <Text style={[styles.transactionCategory, { color: theme.textSecondary }]}>{transaction.category.name}</Text>
-                    <Text style={[styles.transactionDate, { color: theme.textTertiary }]}>
-                      {new Date(transaction.date).toLocaleDateString()}
+                    <Text style={[styles.transactionDescription, { color: theme.text }]} numberOfLines={1}>
+                      {transaction.description}
+                    </Text>
+                    <Text style={[styles.transactionCategory, { color: theme.textSecondary }]} numberOfLines={1}>
+                      {transaction.category.name} • {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </Text>
                   </View>
                 </View>
@@ -256,7 +249,7 @@ export default function TransactionsScreen() {
                     {
                       color: transaction.type === 'income' ? '#059669' : '#DC2626',
                     },
-                  ]}>
+                  ]} numberOfLines={1}>
                     {transaction.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
                   </Text>
                   <View style={styles.transactionActions}>
@@ -398,10 +391,7 @@ export default function TransactionsScreen() {
                 <Text style={[styles.formLabel, { color: theme.text }]}>Category</Text>
                 <TouchableOpacity
                   style={[styles.addCategoryButton, { backgroundColor: theme.primary }]}
-                  onPress={() => {
-                    console.log('Add category button pressed, type:', formData.type);
-                    openAddCategoryModal(formData.type);
-                  }}
+                  onPress={() => openAddCategoryModal(formData.type)}
                 >
                   <Plus size={16} color={isDark ? '#1A1A1A' : 'white'} />
                   <Text style={[styles.addCategoryButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>Add</Text>
@@ -426,7 +416,7 @@ export default function TransactionsScreen() {
                     <Text style={[
                       styles.categoryButtonText,
                       { color: formData.category === category.id ? (isDark ? '#1A1A1A' : 'white') : theme.textSecondary }
-                    ]}>
+                    ]} numberOfLines={1}>
                       {category.name}
                     </Text>
                   </TouchableOpacity>
@@ -471,10 +461,7 @@ export default function TransactionsScreen() {
       {/* Add Category Modal */}
       <AddCategoryModal
         visible={addCategoryModalVisible}
-        onClose={() => {
-          console.log('Closing add category modal');
-          setAddCategoryModalVisible(false);
-        }}
+        onClose={() => setAddCategoryModalVisible(false)}
         type={addCategoryType}
         onCategoryAdded={handleCategoryAdded}
       />
@@ -499,17 +486,9 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: Math.min(width * 0.06, 24),
     fontFamily: 'Inter-Bold',
     color: theme.text,
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   searchSection: {
     paddingHorizontal: 20,
@@ -533,7 +512,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Regular',
     paddingVertical: 16,
   },
@@ -548,7 +527,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderWidth: 1,
   },
   filterButtonText: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Medium',
   },
   transactionsList: {
@@ -559,7 +538,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     paddingVertical: 48,
   },
   loadingText: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Medium',
   },
   transactionItem: {
@@ -579,6 +558,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 12,
   },
   transactionIcon: {
     width: 12,
@@ -590,24 +570,21 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     flex: 1,
   },
   transactionDescription: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-SemiBold',
     marginBottom: 2,
   },
   transactionCategory: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
     marginBottom: 2,
   },
-  transactionDate: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-  },
   transactionRight: {
     alignItems: 'flex-end',
+    minWidth: 80,
   },
   transactionAmount: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Bold',
     marginBottom: 8,
   },
@@ -624,12 +601,12 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     paddingVertical: 48,
   },
   emptyStateText: {
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-SemiBold',
     marginBottom: 8,
   },
   emptyStateSubtext: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
   },
@@ -661,15 +638,15 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderBottomWidth: 1,
   },
   modalCancelButton: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Regular',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-Bold',
   },
   modalSaveButton: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Bold',
   },
   modalContent: {
@@ -681,7 +658,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginBottom: 24,
   },
   formLabel: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-SemiBold',
     marginBottom: 12,
   },
@@ -700,7 +677,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     gap: 4,
   },
   addCategoryButtonText: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-Bold',
   },
   typeButtons: {
@@ -718,7 +695,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderWidth: 2,
   },
   typeButtonText: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-SemiBold',
     marginLeft: 8,
   },
@@ -734,7 +711,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Regular',
     paddingVertical: 16,
   },
@@ -751,6 +728,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 8,
+    maxWidth: width * 0.4,
   },
   categoryColor: {
     width: 12,
@@ -759,7 +737,8 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginRight: 8,
   },
   categoryButtonText: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Medium',
+    flex: 1,
   },
 });

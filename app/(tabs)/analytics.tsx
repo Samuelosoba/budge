@@ -10,7 +10,7 @@ import {
 import { useBudget } from '@/contexts/BudgetContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { ChartBar as BarChart3, ChartPie as PieChart, TrendingUp, Calendar, Crown, Lock, CircleArrowUp as ArrowUpCircle, CircleArrowDown as ArrowDownCircle } from 'lucide-react-native';
+import { ChartBar as BarChart3, ChartPie as PieChart, TrendingUp, Calendar, Crown, Lock, CircleArrowUp as ArrowUpCircle, CircleArrowDown as ArrowDownCircle, Activity, Target } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -60,6 +60,33 @@ export default function AnalyticsScreen() {
       };
     })
     .sort((a, b) => b.percentage - a.percentage);
+
+  // Monthly spending trend (last 6 months)
+  const monthlyTrend = Array.from({ length: 6 }, (_, i) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+    const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    
+    const monthSpending = state.transactions
+      .filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate >= monthStart && transactionDate <= monthEnd && t.type === 'expense';
+      })
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+      month: date.toLocaleDateString('en-US', { month: 'short' }),
+      amount: monthSpending,
+    };
+  }).reverse();
+
+  const maxMonthlySpending = Math.max(...monthlyTrend.map(m => m.amount));
+
+  // Income vs Expense comparison
+  const totalIncome = getTotalIncome();
+  const totalExpenses = getTotalExpenses();
+  const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
 
   const ProUpgradeCard = () => (
     <View style={styles.proCard}>
@@ -148,6 +175,54 @@ export default function AnalyticsScreen() {
           </View>
         </View>
 
+        {/* Savings Rate Card */}
+        <View style={styles.section}>
+          <View style={[styles.savingsCard, { backgroundColor: theme.card }]}>
+            <View style={styles.savingsHeader}>
+              <Target size={24} color={theme.primary} />
+              <Text style={[styles.savingsTitle, { color: theme.text }]}>Savings Rate</Text>
+            </View>
+            <Text style={[styles.savingsRate, { color: savingsRate > 0 ? '#10B981' : '#EF4444' }]}>
+              {savingsRate.toFixed(1)}%
+            </Text>
+            <Text style={[styles.savingsSubtitle, { color: theme.textSecondary }]}>
+              {savingsRate > 20 ? 'Excellent savings!' : savingsRate > 10 ? 'Good progress' : 'Consider saving more'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Monthly Spending Trend Chart */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Activity size={24} color={theme.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Monthly Spending Trend</Text>
+          </View>
+          
+          <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
+            <View style={styles.trendChart}>
+              <View style={styles.chartContainer}>
+                {monthlyTrend.map((item, index) => (
+                  <View key={index} style={styles.chartSegment}>
+                    <View 
+                      style={[
+                        styles.chartBar, 
+                        { 
+                          backgroundColor: theme.primary,
+                          height: Math.max(20, (item.amount / Math.max(maxMonthlySpending, 1)) * 120)
+                        }
+                      ]} 
+                    />
+                    <Text style={[styles.chartLabel, { color: theme.textSecondary }]}>{item.month}</Text>
+                    <Text style={[styles.chartAmount, { color: theme.textTertiary }]}>
+                      ${(item.amount / 1000).toFixed(1)}k
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Spending by Category */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -157,23 +232,31 @@ export default function AnalyticsScreen() {
           
           {categoryData.length > 0 ? (
             <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
-              {/* Simple Chart Representation */}
-              <View style={styles.simpleChart}>
-                <View style={styles.chartContainer}>
-                  {categoryData.slice(0, 4).map((item, index) => (
-                    <View key={index} style={styles.chartSegment}>
-                      <View 
-                        style={[
-                          styles.chartBar, 
-                          { 
-                            backgroundColor: item.color,
-                            height: Math.max(20, (item.spent / Math.max(...categoryData.map(c => c.spent))) * 120)
-                          }
-                        ]} 
-                      />
-                      <Text style={[styles.chartLabel, { color: theme.textSecondary }]}>{item.name}</Text>
-                    </View>
-                  ))}
+              {/* Donut Chart Representation */}
+              <View style={styles.donutChart}>
+                <View style={styles.donutContainer}>
+                  {categoryData.slice(0, 5).map((item, index) => {
+                    const percentage = (item.spent / totalExpenses) * 100;
+                    return (
+                      <View key={index} style={styles.donutSegment}>
+                        <View 
+                          style={[
+                            styles.donutBar, 
+                            { 
+                              backgroundColor: item.color,
+                              width: `${Math.max(10, percentage)}%`
+                            }
+                          ]} 
+                        />
+                        <Text style={[styles.donutLabel, { color: theme.textSecondary }]} numberOfLines={1}>
+                          {item.name}
+                        </Text>
+                        <Text style={[styles.donutPercentage, { color: theme.text }]}>
+                          {percentage.toFixed(0)}%
+                        </Text>
+                      </View>
+                    );
+                  })}
                 </View>
               </View>
               
@@ -181,7 +264,7 @@ export default function AnalyticsScreen() {
                 {categoryData.slice(0, 5).map((item, index) => (
                   <View key={index} style={styles.legendItem}>
                     <View style={[styles.legendColor, { backgroundColor: item.color }]} />
-                    <Text style={[styles.legendText, { color: theme.text }]}>{item.name}</Text>
+                    <Text style={[styles.legendText, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
                     <Text style={[styles.legendAmount, { color: theme.text }]}>{formatCurrency(item.spent)}</Text>
                   </View>
                 ))}
@@ -207,7 +290,7 @@ export default function AnalyticsScreen() {
                 <View style={styles.budgetProgressHeader}>
                   <View style={styles.budgetProgressLeft}>
                     <View style={[styles.categoryColor, { backgroundColor: item.color }]} />
-                    <Text style={[styles.budgetProgressCategory, { color: theme.text }]}>{item.category}</Text>
+                    <Text style={[styles.budgetProgressCategory, { color: theme.text }]} numberOfLines={1}>{item.category}</Text>
                   </View>
                   <Text style={[styles.budgetProgressAmount, { color: theme.textSecondary }]}>
                     {formatCurrency(item.spent)} / {formatCurrency(item.budget)}
@@ -244,24 +327,24 @@ export default function AnalyticsScreen() {
         {/* Pro Features */}
         {!user?.isPro && <ProUpgradeCard />}
 
-        {/* Monthly Trends - Pro Feature */}
+        {/* Advanced Analytics - Pro Feature */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <TrendingUp size={24} color={theme.primary} />
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Monthly Trends</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Advanced Analytics</Text>
             {!user?.isPro && <Crown size={16} color="#8B5CF6" />}
           </View>
 
           {user?.isPro ? (
             <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
-              <View style={styles.trendChart}>
-                <Text style={[styles.comingSoon, { color: theme.textSecondary }]}>Advanced charts coming soon!</Text>
+              <View style={styles.advancedChart}>
+                <Text style={[styles.comingSoon, { color: theme.textSecondary }]}>Advanced analytics coming soon!</Text>
               </View>
             </View>
           ) : (
             <LockedFeature
-              title="Monthly Spending Trends"
-              description="Track your spending patterns over time with detailed charts"
+              title="Advanced Analytics Dashboard"
+              description="Detailed spending patterns, forecasting, and custom reports"
             />
           )}
         </View>
@@ -307,7 +390,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: Math.min(width * 0.07, 28),
     fontFamily: 'Inter-Bold',
     color: theme.text,
   },
@@ -321,7 +404,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     gap: 4,
   },
   proBadgeText: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-Bold',
   },
   periodSelector: {
@@ -345,7 +428,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderWidth: 1,
   },
   periodButtonText: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-SemiBold',
   },
   statsGrid: {
@@ -366,14 +449,15 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     elevation: 2,
   },
   statValue: {
-    fontSize: 20,
+    fontSize: Math.min(width * 0.05, 20),
     fontFamily: 'Inter-Bold',
     marginTop: 8,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-Medium',
     marginTop: 4,
+    textAlign: 'center',
   },
   section: {
     marginBottom: 32,
@@ -385,10 +469,40 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: Math.min(width * 0.05, 20),
     fontFamily: 'Inter-Bold',
     marginLeft: 12,
     flex: 1,
+  },
+  savingsCard: {
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  savingsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  savingsTitle: {
+    fontSize: Math.min(width * 0.045, 18),
+    fontFamily: 'Inter-Bold',
+    marginLeft: 8,
+  },
+  savingsRate: {
+    fontSize: Math.min(width * 0.08, 32),
+    fontFamily: 'Inter-Bold',
+    marginBottom: 8,
+  },
+  savingsSubtitle: {
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
   },
   chartCard: {
     borderRadius: 16,
@@ -405,10 +519,10 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
   },
   emptyChartText: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Medium',
   },
-  simpleChart: {
+  trendChart: {
     marginBottom: 20,
   },
   chartContainer: {
@@ -416,26 +530,55 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'flex-end',
     height: 140,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
   },
   chartSegment: {
     alignItems: 'center',
     flex: 1,
   },
   chartBar: {
-    width: 30,
+    width: Math.max(20, width * 0.08),
     borderRadius: 4,
     marginBottom: 8,
   },
   chartLabel: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-Medium',
     textAlign: 'center',
+    marginBottom: 2,
   },
-  trendChart: {
-    height: 200,
-    justifyContent: 'center',
+  chartAmount: {
+    fontSize: Math.min(width * 0.025, 10),
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+  },
+  donutChart: {
+    marginBottom: 20,
+  },
+  donutContainer: {
+    gap: 12,
+  },
+  donutSegment: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 8,
+  },
+  donutBar: {
+    height: 8,
+    borderRadius: 4,
+    marginRight: 12,
+    minWidth: 20,
+  },
+  donutLabel: {
+    flex: 1,
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-Medium',
+  },
+  donutPercentage: {
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-Bold',
+    minWidth: 40,
+    textAlign: 'right',
   },
   legendContainer: {
     gap: 8,
@@ -453,11 +596,11 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   },
   legendText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Medium',
   },
   legendAmount: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Bold',
   },
   budgetProgressList: {
@@ -481,6 +624,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   budgetProgressLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   categoryColor: {
     width: 12,
@@ -489,11 +633,12 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginRight: 8,
   },
   budgetProgressCategory: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-SemiBold',
+    flex: 1,
   },
   budgetProgressAmount: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Medium',
   },
   budgetProgressBar: {
@@ -507,7 +652,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderRadius: 4,
   },
   budgetProgressPercent: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-Bold',
     textAlign: 'right',
   },
@@ -522,13 +667,13 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderRadius: 16,
   },
   proTitle: {
-    fontSize: 20,
+    fontSize: Math.min(width * 0.05, 20),
     fontFamily: 'Inter-Bold',
     marginTop: 12,
     marginBottom: 8,
   },
   proSubtitle: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
     marginBottom: 20,
@@ -539,7 +684,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderRadius: 20,
   },
   upgradeButtonText: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Bold',
   },
   lockedFeature: {
@@ -554,16 +699,21 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     flex: 1,
   },
   lockedTitle: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-SemiBold',
     marginBottom: 4,
   },
   lockedDescription: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
   },
+  advancedChart: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   comingSoon: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Medium',
     textAlign: 'center',
     paddingVertical: 32,

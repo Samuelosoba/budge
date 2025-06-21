@@ -9,13 +9,16 @@ import {
   Alert,
   Modal,
   TextInput,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBudget } from '@/contexts/BudgetContext';
 import { useTheme, ThemeMode } from '@/contexts/ThemeContext';
 import CategoryManagementModal from '@/components/CategoryManagementModal';
-import { User, Crown, Bell, Lock, Palette, CreditCard, CircleHelp as HelpCircle, LogOut, Target, Smartphone, Shield, Mail, ChevronRight, DollarSign, Plus, Sun, Moon, Monitor } from 'lucide-react-native';
+import { User, Crown, Bell, Lock, Palette, CircleHelp as HelpCircle, LogOut, Target, Smartphone, Shield, Mail, ChevronRight, DollarSign, Plus, Sun, Moon, Monitor, Eye, EyeOff, Key, FileText, UserCheck } from 'lucide-react-native';
+
+const { width } = Dimensions.get('window');
 
 export default function SettingsScreen() {
   const { user, signOut, upgradeToPro } = useAuth();
@@ -25,6 +28,8 @@ export default function SettingsScreen() {
   const [budgetModalVisible, setBudgetModalVisible] = useState(false);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
+  const [securityModalVisible, setSecurityModalVisible] = useState(false);
+  const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
   const [newBudget, setNewBudget] = useState(state.monthlyBudget.toString());
   const [isUpdatingBudget, setIsUpdatingBudget] = useState(false);
 
@@ -50,28 +55,27 @@ export default function SettingsScreen() {
     );
   };
 
-const handleUpdateBudget = async () => {
-  const parsed = parseFloat(newBudget);
+  const handleUpdateBudget = async () => {
+    const parsed = parseFloat(newBudget);
 
-  if (!newBudget || isNaN(parsed) || parsed <= 0) {
-    Alert.alert('Invalid Budget', 'Please enter a valid number greater than zero.');
-    return;
-  }
+    if (!newBudget || isNaN(parsed) || parsed <= 0) {
+      Alert.alert('Invalid Budget', 'Please enter a valid number greater than zero.');
+      return;
+    }
 
-  setIsUpdatingBudget(true);
+    setIsUpdatingBudget(true);
 
-  try {
-    await setMonthlyBudget(parsed);
-    setBudgetModalVisible(false);
-    Alert.alert('Success', 'Monthly budget updated successfully');
-  } catch (error) {
-    console.error('Budget update error:', error);
-    Alert.alert('Error', 'Failed to update monthly budget. Please try again.');
-  } finally {
-    setIsUpdatingBudget(false);
-  }
-};
-
+    try {
+      await setMonthlyBudget(parsed);
+      setBudgetModalVisible(false);
+      Alert.alert('Success', 'Monthly budget updated successfully');
+    } catch (error) {
+      console.error('Budget update error:', error);
+      Alert.alert('Error', 'Failed to update monthly budget. Please try again.');
+    } finally {
+      setIsUpdatingBudget(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -134,11 +138,11 @@ const handleUpdateBudget = async () => {
       <View style={styles.settingsItemLeft}>
         {icon}
         <View style={styles.settingsItemText}>
-          <Text style={[styles.settingsItemTitle, { color: theme.text }, disabled && styles.disabledText]}>
+          <Text style={[styles.settingsItemTitle, { color: theme.text }, disabled && styles.disabledText]} numberOfLines={1}>
             {title}
           </Text>
           {subtitle && (
-            <Text style={[styles.settingsItemSubtitle, { color: theme.textSecondary }, disabled && styles.disabledText]}>
+            <Text style={[styles.settingsItemSubtitle, { color: theme.textSecondary }, disabled && styles.disabledText]} numberOfLines={2}>
               {subtitle}
             </Text>
           )}
@@ -166,8 +170,8 @@ const handleUpdateBudget = async () => {
                 <User size={32} color={isDark ? '#1A1A1A' : 'white'} />
               </View>
               <View style={styles.profileInfo}>
-                <Text style={[styles.profileName, { color: theme.text }]}>{user?.name}</Text>
-                <Text style={[styles.profileEmail, { color: theme.textSecondary }]}>{user?.email}</Text>
+                <Text style={[styles.profileName, { color: theme.text }]} numberOfLines={1}>{user?.name}</Text>
+                <Text style={[styles.profileEmail, { color: theme.textSecondary }]} numberOfLines={1}>{user?.email}</Text>
               </View>
               {user?.isPro && (
                 <View style={styles.proBadge}>
@@ -226,20 +230,6 @@ const handleUpdateBudget = async () => {
         {/* Account Settings */}
         <SettingsSection title="Account">
           <SettingsItem
-            icon={<CreditCard size={24} color="#3B82F6" />}
-            title="Connected Accounts"
-            subtitle={user?.isPro ? "Manage bank connections" : "Pro feature"}
-            onPress={() => {
-              if (user?.isPro) {
-                Alert.alert('Coming Soon', 'Bank account management is coming soon!');
-              } else {
-                handleUpgradeToPro();
-              }
-            }}
-            disabled={!user?.isPro}
-          />
-          
-          <SettingsItem
             icon={<Bell size={24} color="#F59E0B" />}
             title="Notifications"
             subtitle="Budget alerts and reminders"
@@ -255,9 +245,16 @@ const handleUpdateBudget = async () => {
           
           <SettingsItem
             icon={<Lock size={24} color="#6B7280" />}
-            title="Privacy & Security"
-            subtitle="Manage your data and security"
-            onPress={() => Alert.alert('Coming Soon', 'Privacy settings are coming soon!')}
+            title="Security"
+            subtitle="Password and authentication settings"
+            onPress={() => setSecurityModalVisible(true)}
+          />
+
+          <SettingsItem
+            icon={<Shield size={24} color="#059669" />}
+            title="Privacy"
+            subtitle="Data usage and privacy controls"
+            onPress={() => setPrivacyModalVisible(true)}
           />
         </SettingsSection>
 
@@ -288,7 +285,7 @@ const handleUpdateBudget = async () => {
           />
           
           <SettingsItem
-            icon={<Shield size={24} color="#6B7280" />}
+            icon={<FileText size={24} color="#6B7280" />}
             title="Privacy Policy"
             subtitle="Read our privacy policy"
             onPress={() => Alert.alert('Privacy', 'View our privacy policy at budge.app/privacy')}
@@ -409,6 +406,157 @@ const handleUpdateBudget = async () => {
         </View>
       </Modal>
 
+      {/* Security Modal */}
+      <Modal
+        visible={securityModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSecurityModalVisible(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <TouchableOpacity onPress={() => setSecurityModalVisible(false)}>
+              <Text style={[styles.modalCancelButton, { color: theme.textSecondary }]}>Close</Text>
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Security Settings</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.securitySection}>
+              <View style={styles.securityItem}>
+                <Key size={24} color={theme.primary} />
+                <View style={styles.securityItemContent}>
+                  <Text style={[styles.securityItemTitle, { color: theme.text }]}>Change Password</Text>
+                  <Text style={[styles.securityItemDescription, { color: theme.textSecondary }]}>
+                    Update your account password for better security
+                  </Text>
+                  <TouchableOpacity 
+                    style={[styles.securityButton, { backgroundColor: theme.primary }]}
+                    onPress={() => Alert.alert('Change Password', 'Password change functionality coming soon!')}
+                  >
+                    <Text style={[styles.securityButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
+                      Change Password
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.securityItem}>
+                <UserCheck size={24} color={theme.primary} />
+                <View style={styles.securityItemContent}>
+                  <Text style={[styles.securityItemTitle, { color: theme.text }]}>Two-Factor Authentication</Text>
+                  <Text style={[styles.securityItemDescription, { color: theme.textSecondary }]}>
+                    Add an extra layer of security to your account
+                  </Text>
+                  <TouchableOpacity 
+                    style={[styles.securityButton, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]}
+                    onPress={() => Alert.alert('2FA', 'Two-factor authentication coming soon!')}
+                  >
+                    <Text style={[styles.securityButtonText, { color: theme.textSecondary }]}>
+                      Enable 2FA
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.securityItem}>
+                <Eye size={24} color={theme.primary} />
+                <View style={styles.securityItemContent}>
+                  <Text style={[styles.securityItemTitle, { color: theme.text }]}>Login Activity</Text>
+                  <Text style={[styles.securityItemDescription, { color: theme.textSecondary }]}>
+                    View recent login attempts and active sessions
+                  </Text>
+                  <TouchableOpacity 
+                    style={[styles.securityButton, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]}
+                    onPress={() => Alert.alert('Login Activity', 'Login activity monitoring coming soon!')}
+                  >
+                    <Text style={[styles.securityButtonText, { color: theme.textSecondary }]}>
+                      View Activity
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Privacy Modal */}
+      <Modal
+        visible={privacyModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setPrivacyModalVisible(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <TouchableOpacity onPress={() => setPrivacyModalVisible(false)}>
+              <Text style={[styles.modalCancelButton, { color: theme.textSecondary }]}>Close</Text>
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Privacy Settings</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.privacySection}>
+              <View style={styles.privacyItem}>
+                <Text style={[styles.privacyItemTitle, { color: theme.text }]}>Data Collection</Text>
+                <Text style={[styles.privacyItemDescription, { color: theme.textSecondary }]}>
+                  We collect minimal data necessary to provide our services. Your financial data is encrypted and never shared with third parties.
+                </Text>
+                <View style={styles.privacyToggle}>
+                  <Text style={[styles.privacyToggleLabel, { color: theme.text }]}>Analytics Data</Text>
+                  <Switch
+                    value={true}
+                    onValueChange={() => Alert.alert('Analytics', 'Analytics settings coming soon!')}
+                    trackColor={{ false: theme.border, true: theme.primary }}
+                    thumbColor="white"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.privacyItem}>
+                <Text style={[styles.privacyItemTitle, { color: theme.text }]}>Data Export</Text>
+                <Text style={[styles.privacyItemDescription, { color: theme.textSecondary }]}>
+                  Download all your data in a portable format. This includes transactions, categories, and account settings.
+                </Text>
+                <TouchableOpacity 
+                  style={[styles.privacyButton, { backgroundColor: theme.primary }]}
+                  onPress={() => Alert.alert('Data Export', 'Data export functionality coming soon!')}
+                >
+                  <Text style={[styles.privacyButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>
+                    Export My Data
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.privacyItem}>
+                <Text style={[styles.privacyItemTitle, { color: theme.text }]}>Account Deletion</Text>
+                <Text style={[styles.privacyItemDescription, { color: theme.textSecondary }]}>
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </Text>
+                <TouchableOpacity 
+                  style={[styles.privacyButton, { backgroundColor: '#EF4444' }]}
+                  onPress={() => Alert.alert(
+                    'Delete Account',
+                    'Are you sure you want to permanently delete your account? This action cannot be undone.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Delete', style: 'destructive', onPress: () => Alert.alert('Account Deletion', 'Account deletion functionality coming soon!') }
+                    ]
+                  )}
+                >
+                  <Text style={[styles.privacyButtonText, { color: 'white' }]}>
+                    Delete Account
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
       {/* Category Management Modal */}
       <CategoryManagementModal
         visible={categoryModalVisible}
@@ -432,7 +580,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: Math.min(width * 0.07, 28),
     fontFamily: 'Inter-Bold',
     color: theme.text,
   },
@@ -441,7 +589,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 20,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-Bold',
     marginBottom: 16,
   },
@@ -475,12 +623,12 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: 20,
+    fontSize: Math.min(width * 0.05, 20),
     fontFamily: 'Inter-Bold',
     marginBottom: 4,
   },
   profileEmail: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
   },
   proBadge: {
@@ -493,7 +641,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     gap: 4,
   },
   proBadgeText: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-Bold',
     color: '#8B5CF6',
   },
@@ -509,7 +657,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     gap: 8,
   },
   upgradeButtonText: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Bold',
     color: 'white',
   },
@@ -526,18 +674,19 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 12,
   },
   settingsItemText: {
     marginLeft: 16,
     flex: 1,
   },
   settingsItemTitle: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-SemiBold',
     marginBottom: 2,
   },
   settingsItemSubtitle: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
   },
   disabledItem: {
@@ -564,7 +713,7 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderWidth: 1,
   },
   signOutText: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-SemiBold',
     color: '#EF4444',
   },
@@ -581,22 +730,22 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     borderBottomWidth: 1,
   },
   modalCancelButton: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Regular',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-Bold',
   },
   modalSaveButton: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Bold',
   },
   modalContent: {
     padding: 24,
   },
   modalDescription: {
-    fontSize: 16,
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: 'Inter-Regular',
     marginBottom: 24,
     lineHeight: 24,
@@ -614,12 +763,12 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-SemiBold',
     paddingVertical: 16,
   },
   inputHint: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
   },
   themeOptions: {
@@ -634,12 +783,12 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     marginBottom: 12,
   },
   themeOptionTitle: {
-    fontSize: 18,
+    fontSize: Math.min(width * 0.045, 18),
     fontFamily: 'Inter-Bold',
     marginBottom: 4,
   },
   themeOptionDescription: {
-    fontSize: 14,
+    fontSize: Math.min(width * 0.035, 14),
     fontFamily: 'Inter-Regular',
   },
   themeOptionCheck: {
@@ -653,7 +802,75 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
   },
   themeOptionCheckText: {
-    fontSize: 12,
+    fontSize: Math.min(width * 0.03, 12),
     fontFamily: 'Inter-Bold',
+  },
+  securitySection: {
+    gap: 24,
+  },
+  securityItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  securityItemContent: {
+    flex: 1,
+  },
+  securityItemTitle: {
+    fontSize: Math.min(width * 0.04, 16),
+    fontFamily: 'Inter-Bold',
+    marginBottom: 8,
+  },
+  securityItemDescription: {
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-Regular',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  securityButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  securityButtonText: {
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-SemiBold',
+  },
+  privacySection: {
+    gap: 32,
+  },
+  privacyItem: {
+    gap: 12,
+  },
+  privacyItemTitle: {
+    fontSize: Math.min(width * 0.04, 16),
+    fontFamily: 'Inter-Bold',
+  },
+  privacyItemDescription: {
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-Regular',
+    lineHeight: 20,
+  },
+  privacyToggle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  privacyToggleLabel: {
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-Medium',
+  },
+  privacyButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  privacyButtonText: {
+    fontSize: Math.min(width * 0.035, 14),
+    fontFamily: 'Inter-SemiBold',
   },
 });
