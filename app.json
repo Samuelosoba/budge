@@ -30,7 +30,7 @@
       "config": "metro.config.js"
     },
        "extra": {
-      "EXPO_PUBLIC_API_URL": "https://b1aa-102-89-46-240.ngrok-free.app/api"
+      "EXPO_PUBLIC_API_URL": " https://c8ac-102-89-40-195.ngrok-free.app"
     }
   }
 }
