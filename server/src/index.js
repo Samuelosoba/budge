@@ -61,10 +61,10 @@ app.use(
 
 app.use(compression());
 
-// Rate limiting
+// Rate limiting - More permissive for development
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 10000, // Increased from 100 to 10000 for development
   message: {
     error: 'Too many requests from this IP, please try again later.',
     retryAfter: Math.ceil(
