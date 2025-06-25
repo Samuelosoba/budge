@@ -2,13 +2,18 @@ import { Tabs, Redirect } from 'expo-router';
 import { Chrome as Home, ChartBar as BarChart3, MessageCircle, Settings, Plus } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useProAccess } from '@/hooks/useProAccess';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const { user, isLoading } = useAuth();
   const { theme, isDark } = useTheme();
+  const { hasProAccess } = useProAccess();
   const insets = useSafeAreaInsets();
+
+  // For web platform, use the existing isPro field from user context
+  const isProUser = Platform.OS === 'web' ? user?.isPro : hasProAccess;
 
   // Calculate tab bar height and padding for Android
   const getTabBarStyle = () => {
@@ -99,15 +104,18 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="ai-chat"
-        options={{
-          title: 'AI Assistant',
-          tabBarIcon: ({ size, color }) => (
-            <MessageCircle size={size} color={color} />
-          ),
-        }}
-      />
+      {/* Conditionally show AI Chat tab only for Pro users */}
+      {isProUser && (
+        <Tabs.Screen
+          name="ai-chat"
+          options={{
+            title: 'AI Assistant',
+            tabBarIcon: ({ size, color }) => (
+              <MessageCircle size={size} color={color} />
+            ),
+          }}
+        />
+      )}
       <Tabs.Screen
         name="settings"
         options={{

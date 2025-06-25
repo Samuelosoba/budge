@@ -6,6 +6,7 @@ declare global {
       EXPO_PUBLIC_PLAID_CLIENT_ID: string;
       EXPO_PUBLIC_PLAID_SECRET: string;
       EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY: string;
+      EXPO_PUBLIC_REVENUECAT_API_KEY: string;
     }
   }
 }

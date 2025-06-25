@@ -17,6 +17,7 @@ const aiChatRoutes = require('./routes/aiChat');
 const budgetRoutes = require('./routes/budget');
 const plaidRoutes = require('./routes/plaid');
 const privacyRoutes = require('./routes/privacy');
+const subscriptionRoutes = require('./routes/subscriptions');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -162,6 +163,7 @@ app.use('/api/ai-chat', aiChatRoutes);
 app.use('/api/budget', budgetRoutes);
 app.use('/api/plaid', plaidRoutes);
 app.use('/api/privacy', privacyRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
