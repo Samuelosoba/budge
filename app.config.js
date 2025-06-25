@@ -10,14 +10,14 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.yourcompany.budgeapp"
+      bundleIdentifier: "com.batoseet.budgeapp"
     },
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/images/icon.png",
         backgroundColor: "#ffffff"
       },
-      package: "com.yourcompany.budgeapp"
+      package: "com.batoseet.budgeapp"
     },
     web: {
       bundler: "metro",
