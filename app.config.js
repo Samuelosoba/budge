@@ -43,7 +43,7 @@ export default {
       "config": "metro.config.js"
     },
     extra: {
-      EXPO_PUBLIC_API_URL: "https://c8ac-102-89-40-195.ngrok-free.app",
+      EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL || "https://c8ac-102-89-40-195.ngrok-free.app",
       EXPO_PUBLIC_REVENUECAT_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY
     }
   }
