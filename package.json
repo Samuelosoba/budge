@@ -12,10 +12,9 @@
     "lint": "expo lint",
     "tunnel": "EXPO_NO_TELEMETRY=1 expo start --tunnel",
     "clear": "expo start --clear",
-    "build:dev": "eas build --profile development",
-    "build:preview": "eas build --profile preview",
-    "build:production": "EAS_NO_VCS=1 eas build --profile production"
-
+    "build:dev": "eas build --profile development --platform android",
+    "build:preview": "eas build --profile preview --platform android",
+    "build:production": "eas build --profile production --platform android"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",
@@ -65,7 +64,6 @@
     "@types/d3-shape": "^3.1.6",
     "@types/react": "~19.0.10",
     "cross-env": "^7.0.3",
-    "eas-cli": "^16.13.1",
     "typescript": "~5.8.3"
   }
 }

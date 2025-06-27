@@ -17,7 +17,8 @@ export default {
         foregroundImage: "./assets/images/icon.png",
         backgroundColor: "#ffffff"
       },
-      package: "com.batoseet.budgeapp"
+      package: "com.batoseet.budgeapp",
+      versionCode: 1
     },
     web: {
       bundler: "metro",
@@ -28,7 +29,7 @@ export default {
       "expo-router", 
       "expo-font", 
       "expo-web-browser",
-      "expo-dev-client",
+      "expo-dev-client"
     ],
     experiments: {
       typedRoutes: true
@@ -38,10 +39,10 @@ export default {
     },
     extra: {
       EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL || "https://c8ac-102-89-40-195.ngrok-free.app",
-      EXPO_PUBLIC_REVENUECAT_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY,
-        eas: {
-    projectId: "67f46668-0128-49b7-90bf-2e5d862fb7ea"
-  }
+      EXPO_PUBLIC_REVENUECAT_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY
+    },
+    eas: {
+      projectId: "67f46668-0128-49b7-90bf-2e5d862fb7ea"
     }
   }
 }
