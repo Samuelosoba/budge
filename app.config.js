@@ -29,12 +29,6 @@ export default {
       "expo-font", 
       "expo-web-browser",
       "expo-dev-client",
-      [
-        "react-native-purchases",
-        {
-          "revenuecat_api_key": process.env.EXPO_PUBLIC_REVENUECAT_API_KEY
-        }
-      ]
     ],
     experiments: {
       typedRoutes: true
