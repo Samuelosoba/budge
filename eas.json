@@ -22,6 +22,9 @@
     "production": {
       "ios": {
         "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "app-bundle"  // 👈 this line is required for Play Store
       }
     }
   },
