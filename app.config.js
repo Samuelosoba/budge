@@ -42,7 +42,7 @@ export default {
       EXPO_PUBLIC_REVENUECAT_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY
     },
     eas: {
-      projectId: "67f46668-0128-49b7-90bf-2e5d862fb7ea"
+      projectId: "07fe8602-893a-4994-a6fe-4cc04acafbce"
     }
   }
 }
