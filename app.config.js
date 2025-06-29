@@ -38,7 +38,7 @@ export default {
       "config": "metro.config.js"
     },
     extra: {
-      EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL || "https://1b1d-129-205-124-201.ngrok-free.app/api",
+      EXPO_PUBLIC_API_URL:"https://1b1d-129-205-124-201.ngrok-free.app/api",
       EXPO_PUBLIC_REVENUECAT_API_KEY:"goog_OwQUxxbXXDcwGkmUWWwIcWMBaEV",
          eas: {
       projectId: "07fe8602-893a-4994-a6fe-4cc04acafbce"
