@@ -19,7 +19,7 @@ const getApiUrl = () => {
   return 'http://localhost:3000/api';
 };
 
-const API_BASE_URL = getApiUrl();
+const API_BASE_URL ="https://1b1d-129-205-124-201.ngrok-free.app/api";
 
 interface ApiContextType {
   apiCall: (endpoint: string, options?: RequestInit) => Promise<any>;
