@@ -18,7 +18,7 @@ export default {
         backgroundColor: "#ffffff"
       },
       package: "com.batoseet.budgeapp",
-      versionCode: 1
+      versionCode: 2
     },
     web: {
       bundler: "metro",
