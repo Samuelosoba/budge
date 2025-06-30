@@ -42,6 +42,16 @@ export default function ProGate({ children, fallbackScreen }: ProGateProps) {
     return <>{fallbackScreen}</>;
   }
 
+  const handleUpgradePress = () => {
+    try {
+      router.push('/pricing');
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback navigation
+      router.replace('/pricing');
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.content}>
@@ -86,7 +96,7 @@ export default function ProGate({ children, fallbackScreen }: ProGateProps) {
 
         <TouchableOpacity
           style={[styles.upgradeButton, { backgroundColor: theme.primary }]}
-          onPress={() => router.push('/pricing')}
+          onPress={handleUpgradePress}
         >
           <Crown size={20} color={isDark ? '#1A1A1A' : 'white'} />
           <Text style={[styles.upgradeButtonText, { color: isDark ? '#1A1A1A' : 'white' }]}>

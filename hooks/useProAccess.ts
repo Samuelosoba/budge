@@ -1,33 +1,34 @@
 import { useEffect, useState } from 'react';
 import { useRevenueCat } from './useRevenueCat';
+import { useAuth } from '@/contexts/AuthContext';
 import { Platform } from 'react-native';
 
 const PRO_ENTITLEMENT_ID = 'pro'; // This should match your RevenueCat entitlement ID
 
 export function useProAccess() {
   const { customerInfo, isConfigured, isLoading } = useRevenueCat();
+  const { user } = useAuth();
   const [hasProAccess, setHasProAccess] = useState(false);
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
 
   useEffect(() => {
     checkProAccess();
-  }, [customerInfo, isConfigured]);
+  }, [customerInfo, isConfigured, user]);
 
   const checkProAccess = () => {
     setIsCheckingAccess(true);
 
     try {
-      // On web, we'll check the user's isPro status from the auth context
+      // For web platform, use the existing isPro field from user context
       if (Platform.OS === 'web') {
-        // For web, we'll rely on the existing isPro field from the user context
-        // This will be handled in the component that uses this hook
-        setHasProAccess(false); // Default to false for web
+        setHasProAccess(user?.isPro || false);
         setIsCheckingAccess(false);
         return;
       }
 
       if (!isConfigured || !customerInfo) {
-        setHasProAccess(false);
+        // If RevenueCat is not configured, fall back to user.isPro
+        setHasProAccess(user?.isPro || false);
         setIsCheckingAccess(false);
         return;
       }
@@ -41,7 +42,8 @@ export function useProAccess() {
 
     } catch (error) {
       console.error('Error checking pro access:', error);
-      setHasProAccess(false);
+      // Fall back to user.isPro on error
+      setHasProAccess(user?.isPro || false);
       setIsCheckingAccess(false);
     }
   };

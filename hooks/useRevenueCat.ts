@@ -33,25 +33,29 @@ export function useRevenueCat() {
 
   const initializeRevenueCat = async () => {
     try {
-      if (!REVENUECAT_API_KEY) {
-        throw new Error('RevenueCat API key not found in environment variables');
-      }
-
-      // Configure RevenueCat
-      if (Platform.OS === 'ios') {
-        await Purchases.configure({ apiKey: REVENUECAT_API_KEY });
-      } else if (Platform.OS === 'android') {
-        await Purchases.configure({ apiKey: REVENUECAT_API_KEY });
-      } else {
-        // Web fallback - RevenueCat doesn't work on web
+      // Check if we're on web platform
+      if (Platform.OS === 'web') {
         setState(prev => ({
           ...prev,
           isConfigured: false,
           isLoading: false,
-          error: 'RevenueCat is not supported on web platform'
+          error: 'RevenueCat is not supported on web platform. Please use the web upgrade flow.'
         }));
         return;
       }
+
+      if (!REVENUECAT_API_KEY) {
+        setState(prev => ({
+          ...prev,
+          isConfigured: false,
+          isLoading: false,
+          error: 'RevenueCat API key not found. Please configure EXPO_PUBLIC_REVENUECAT_API_KEY in your environment.'
+        }));
+        return;
+      }
+
+      // Configure RevenueCat
+      await Purchases.configure({ apiKey: REVENUECAT_API_KEY });
 
       // Set debug logs in development
       if (__DEV__) {
@@ -97,12 +101,24 @@ export function useRevenueCat() {
       }));
 
       return customerInfo;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Purchase error:', error);
+      
+      // Handle user cancellation gracefully
+      if (error.userCancelled) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: null, // Don't show error for user cancellation
+        }));
+        throw { userCancelled: true };
+      }
+      
+      const errorMessage = error.message || 'Purchase failed. Please try again.';
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Purchase failed',
+        error: errorMessage,
       }));
       throw error;
     }
@@ -123,10 +139,11 @@ export function useRevenueCat() {
       return customerInfo;
     } catch (error) {
       console.error('Restore purchases error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to restore purchases';
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to restore purchases',
+        error: errorMessage,
       }));
       throw error;
     }

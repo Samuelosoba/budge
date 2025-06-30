@@ -56,6 +56,15 @@ export default function PricingScreen() {
       return;
     }
 
+    if (!isConfigured) {
+      Alert.alert(
+        'RevenueCat Not Available',
+        'In-app purchases are not available. Please try the web version for upgrades.',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+      return;
+    }
+
     if (!selectedPackage) {
       Alert.alert('Error', 'Please select a subscription plan');
       return;
@@ -81,6 +90,11 @@ export default function PricingScreen() {
   const handleRestorePurchases = async () => {
     if (Platform.OS === 'web') {
       Alert.alert('Info', 'Purchase restoration is not available on web.');
+      return;
+    }
+
+    if (!isConfigured) {
+      Alert.alert('Error', 'RevenueCat is not configured. Cannot restore purchases.');
       return;
     }
 
@@ -148,7 +162,7 @@ export default function PricingScreen() {
   if (error && Platform.OS !== 'web') {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
-        <Text style={[styles.errorText, { color: theme.error }]}>Failed to load pricing</Text>
+        <Text style={[styles.errorText, { color: '#EF4444' }]}>Unable to load pricing</Text>
         <Text style={[styles.errorSubtext, { color: theme.textSecondary }]}>{error}</Text>
         <TouchableOpacity
           style={[styles.retryButton, { backgroundColor: theme.primary }]}
@@ -189,6 +203,23 @@ export default function PricingScreen() {
             Get the most out of your financial journey with our Pro subscription
           </Text>
         </View>
+
+        {/* Platform Notice */}
+        {Platform.OS === 'web' && (
+          <View style={[styles.platformNotice, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.platformNoticeText, { color: theme.textSecondary }]}>
+              💻 Web Version: Upgrade directly through our secure payment system
+            </Text>
+          </View>
+        )}
+
+        {!isConfigured && Platform.OS !== 'web' && (
+          <View style={[styles.platformNotice, { backgroundColor: '#FEF3C7' }]}>
+            <Text style={[styles.platformNoticeText, { color: '#92400E' }]}>
+              ⚠️ In-app purchases not available. Please use the web version to upgrade.
+            </Text>
+          </View>
+        )}
 
         {/* Pricing Cards */}
         <View style={styles.pricingSection}>
@@ -280,7 +311,7 @@ export default function PricingScreen() {
         </View>
 
         {/* Restore Purchases Button (Mobile Only) */}
-        {Platform.OS !== 'web' && (
+        {Platform.OS !== 'web' && isConfigured && (
           <TouchableOpacity
             style={[styles.restoreButton, { borderColor: theme.border }]}
             onPress={handleRestorePurchases}
@@ -300,7 +331,7 @@ export default function PricingScreen() {
         <View style={styles.terms}>
           <Text style={[styles.termsText, { color: theme.textTertiary }]}>
             By subscribing, you agree to our Terms of Service and Privacy Policy. 
-            Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.
+            {Platform.OS !== 'web' && ' Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.'}
           </Text>
         </View>
       </ScrollView>
@@ -366,6 +397,17 @@ const createStyles = (theme: any, isDark: boolean) => StyleSheet.create({
     color: theme.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  platformNotice: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 16,
+    borderRadius: 12,
+  },
+  platformNoticeText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    textAlign: 'center',
   },
   pricingSection: {
     paddingHorizontal: 20,
