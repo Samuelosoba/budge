@@ -16,7 +16,7 @@ const getApiUrl = () => {
   }
 
   // Final fallback (localhost)
-  return 'http://localhost:3000/api';
+  return 'https://server-samuelosoba-samuels-projects-e534d71a.vercel.app//api';
 };
 
 const API_BASE_URL ="https://92b2-197-211-59-52.ngrok-free.app/api";
