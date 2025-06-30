@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "description": "Backend API for Budge budgeting app",
   "main": "src/index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "cross-env PORT=3000 nodemon src/index.js",
     "start": "node src/index.js",
+    "build": "echo 'No build step required'",
     "tunnel": "ngrok http 3000",
-    "test": "jest"
+    "test": "jest",
+    "vercel-build": "echo 'Build completed'"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

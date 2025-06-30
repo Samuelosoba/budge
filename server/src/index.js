@@ -28,21 +28,18 @@ const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
   console.error('Missing required environment variables:', missingEnvVars);
-  console.error('Please check your .env file in the server directory');
+  console.error('Please check your environment variables in Vercel dashboard');
   process.exit(1);
 }
 
-// Log environment variables to verify they're loaded
+// Log environment variables to verify they're loaded (without exposing secrets)
 console.log('Environment check:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('PORT:', process.env.PORT);
 console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
 console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
 console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'Set' : 'Not set');
-console.log(
-  'PLAID_CLIENT_ID:',
-  process.env.PLAID_CLIENT_ID ? 'Set' : 'Not set'
-);
+console.log('PLAID_CLIENT_ID:', process.env.PLAID_CLIENT_ID ? 'Set' : 'Not set');
 console.log('PLAID_SECRET:', process.env.PLAID_SECRET ? 'Set' : 'Not set');
 
 // Security middleware
@@ -62,10 +59,10 @@ app.use(
 
 app.use(compression());
 
-// Rate limiting - More permissive for development
+// Rate limiting - Production settings
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 10000, // Increased from 100 to 10000 for development
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // 100 requests per window
   message: {
     error: 'Too many requests from this IP, please try again later.',
     retryAfter: Math.ceil(
@@ -77,9 +74,26 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration - Allow all origins for development
+// CORS configuration for production
 const corsOptions = {
-  origin: true, // Allow all origins in development
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'https://your-expo-app.vercel.app', // Replace with your actual frontend URL
+      'http://localhost:8081', // For development
+      'http://localhost:3000', // For development
+    ].filter(Boolean);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -106,15 +120,23 @@ app.use(
   })
 );
 
-// Connect to MongoDB with better error handling
+// Connect to MongoDB with better error handling for serverless
 const connectDB = async () => {
   try {
+    // Use cached connection in serverless environment
+    if (mongoose.connections[0].readyState) {
+      console.log('Using existing MongoDB connection');
+      return;
+    }
+
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
+      bufferCommands: false, // Disable mongoose buffering for serverless
+      bufferMaxEntries: 0, // Disable mongoose buffering for serverless
     });
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
@@ -133,11 +155,12 @@ const connectDB = async () => {
     });
   } catch (error) {
     console.error('MongoDB connection failed:', error);
-    process.exit(1);
+    throw error; // Don't exit process in serverless environment
   }
 };
 
-connectDB();
+// Initialize database connection
+connectDB().catch(console.error);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -148,9 +171,30 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     uptime: process.uptime(),
     memory: process.memoryUsage(),
-    mongodb:
-      mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     openai: process.env.OPENAI_API_KEY ? 'configured' : 'not configured',
+    platform: 'vercel',
+  });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Budge API Server',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      transactions: '/api/transactions',
+      categories: '/api/categories',
+      bankAccounts: '/api/bank-accounts',
+      aiChat: '/api/ai-chat',
+      budget: '/api/budget',
+      plaid: '/api/plaid',
+      privacy: '/api/privacy',
+      subscriptions: '/api/subscriptions',
+    },
   });
 });
 
@@ -210,12 +254,17 @@ app.use((err, req, res, next) => {
     });
   }
 
+  // CORS errors
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      error: 'CORS policy violation',
+      message: 'Origin not allowed',
+    });
+  }
+
   // Default error response
   res.status(err.status || 500).json({
-    error:
-      process.env.NODE_ENV === 'development'
-        ? err.message
-        : 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
@@ -227,10 +276,22 @@ app.use('*', (req, res) => {
     path: req.originalUrl,
     method: req.method,
     timestamp: new Date().toISOString(),
+    availableEndpoints: [
+      '/api/health',
+      '/api/auth',
+      '/api/transactions',
+      '/api/categories',
+      '/api/bank-accounts',
+      '/api/ai-chat',
+      '/api/budget',
+      '/api/plaid',
+      '/api/privacy',
+      '/api/subscriptions',
+    ],
   });
 });
 
-// Graceful shutdown
+// Graceful shutdown (not needed for serverless but good practice)
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
   mongoose.connection.close(() => {
@@ -247,27 +308,26 @@ process.on('SIGINT', () => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 CORS enabled for all origins (development mode)`);
-  console.log(
-    `📝 API Documentation available at: http://localhost:${PORT}/health`
-  );
-  console.log(`🔗 Frontend should connect to: http://localhost:${PORT}/api`);
-});
-
-// Handle server errors
-server.on('error', (error) => {
-  if (error.code === 'EADDRINUSE') {
-    console.error(
-      `❌ Port ${PORT} is already in use. Please use a different port or stop the existing process.`
-    );
-    process.exit(1);
-  } else {
-    console.error('Server error:', error);
-  }
-});
-
+// For serverless environments, export the app
 module.exports = app;
+
+// For local development, start the server
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 CORS configured for production`);
+    console.log(`📝 API Documentation available at: http://localhost:${PORT}/api/health`);
+  });
+
+  // Handle server errors
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${PORT} is already in use. Please use a different port or stop the existing process.`);
+      process.exit(1);
+    } else {
+      console.error('Server error:', error);
+    }
+  });
+}

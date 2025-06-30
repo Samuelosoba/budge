@@ -2,6 +2,100 @@
 
 A comprehensive REST API for the Budge budgeting application built with Node.js, Express, and MongoDB.
 
+## 🚀 Vercel Deployment
+
+This backend is optimized for deployment on Vercel's serverless platform.
+
+### Quick Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/budge-backend)
+
+### Manual Deployment Steps
+
+1. **Fork/Clone this repository**
+
+2. **Install Vercel CLI** (if not already installed):
+   ```bash
+   npm i -g vercel
+   ```
+
+3. **Login to Vercel**:
+   ```bash
+   vercel login
+   ```
+
+4. **Deploy to Vercel**:
+   ```bash
+   cd server
+   vercel
+   ```
+
+5. **Configure Environment Variables** in Vercel Dashboard:
+   - Go to your project in Vercel Dashboard
+   - Navigate to Settings → Environment Variables
+   - Add the required variables (see below)
+
+### Required Environment Variables
+
+Set these in your Vercel project dashboard:
+
+```env
+# Database (Required)
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/budge?retryWrites=true&w=majority
+
+# Authentication (Required)
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
+
+# OpenAI (Optional - for AI features)
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# CORS Configuration (Required)
+FRONTEND_URL=https://your-frontend-domain.com
+
+# Rate Limiting (Optional)
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Security (Optional)
+BCRYPT_SALT_ROUNDS=12
+
+# File Upload (Optional)
+MAX_FILE_SIZE=10mb
+
+# Plaid (Optional - for bank connections)
+PLAID_CLIENT_ID=your-plaid-client-id
+PLAID_SECRET=your-plaid-secret-key
+PLAID_ENV=sandbox
+```
+
+### MongoDB Setup
+
+1. **Create MongoDB Atlas Account**: [https://www.mongodb.com/atlas](https://www.mongodb.com/atlas)
+
+2. **Create a Cluster**:
+   - Choose a free tier cluster
+   - Select a region close to your users
+   - Create a database user with read/write permissions
+
+3. **Get Connection String**:
+   - Go to Database → Connect → Connect your application
+   - Copy the connection string
+   - Replace `<password>` with your database user password
+   - Replace `<dbname>` with `budge`
+
+4. **Whitelist IP Addresses**:
+   - Go to Network Access
+   - Add `0.0.0.0/0` to allow connections from anywhere (Vercel's IPs)
+
+### Domain Configuration
+
+After deployment, update your frontend's API URL to point to your Vercel deployment:
+
+```javascript
+// In your frontend app
+const API_BASE_URL = "https://your-vercel-deployment.vercel.app/api";
+```
+
 ## Features
 
 - **Authentication**: JWT-based authentication with secure password hashing
@@ -11,6 +105,7 @@ A comprehensive REST API for the Budge budgeting application built with Node.js,
 - **AI Chat**: OpenAI-powered financial assistant
 - **Analytics**: Financial insights and statistics
 - **Security**: Rate limiting, CORS, and input validation
+- **Serverless**: Optimized for Vercel's serverless platform
 
 ## Tech Stack
 
@@ -20,67 +115,8 @@ A comprehensive REST API for the Budge budgeting application built with Node.js,
 - **Authentication**: JWT (JSON Web Tokens)
 - **Validation**: express-validator
 - **Security**: Helmet, CORS, Rate Limiting
-- **AI**: OpenAI GPT-3.5-turbo
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v16 or higher)
-- MongoDB (local or cloud instance)
-- OpenAI API key (optional, for AI features)
-
-### Installation
-
-1. Clone the repository and navigate to the server directory:
-```bash
-cd server
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create environment file:
-```bash
-cp .env.example .env
-```
-
-4. Configure your environment variables in `.env`:
-```env
-MONGODB_URI=mongodb://localhost:27017/budge
-JWT_SECRET=your-super-secret-jwt-key-here
-OPENAI_API_KEY=your-openai-api-key-here
-PORT=3001
-```
-
-5. Start the development server:
-```bash
-npm run dev
-```
-
-The API will be available at `http://localhost:3001`
-
-## Environment Variables
-
-### Required Variables
-
-- `MONGODB_URI`: MongoDB connection string
-- `JWT_SECRET`: Secret key for JWT token signing
-
-### Optional Variables
-
-- `OPENAI_API_KEY`: OpenAI API key for AI chat features
-- `PORT`: Server port (default: 3001)
-- `NODE_ENV`: Environment (development/production)
-- `FRONTEND_URL`: Frontend URL for CORS (default: http://localhost:8081)
-
-### Security Variables
-
-- `RATE_LIMIT_WINDOW_MS`: Rate limiting window in milliseconds
-- `RATE_LIMIT_MAX_REQUESTS`: Maximum requests per window
-- `BCRYPT_SALT_ROUNDS`: BCrypt salt rounds for password hashing
+- **AI**: OpenAI GPT-4
+- **Deployment**: Vercel Serverless Functions
 
 ## API Endpoints
 
@@ -123,74 +159,45 @@ The API will be available at `http://localhost:3001`
 - `PUT /api/budget/monthly` - Update monthly budget
 - `PUT /api/budget/preferences` - Update user preferences
 
-## Data Models
+### Health Check
+- `GET /api/health` - Server health and status
 
-### User
-```javascript
-{
-  name: String,
-  email: String (unique),
-  password: String (hashed),
-  isPro: Boolean,
-  monthlyBudget: Number,
-  preferences: {
-    currency: String,
-    notifications: Boolean,
-    theme: String
-  }
-}
-```
+## Local Development
 
-### Transaction
-```javascript
-{
-  user: ObjectId,
-  amount: Number,
-  description: String,
-  category: ObjectId,
-  type: 'income' | 'expense',
-  date: Date,
-  isRecurring: Boolean,
-  bankAccount: ObjectId,
-  tags: [String],
-  notes: String
-}
-```
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd server
+   ```
 
-### Category
-```javascript
-{
-  user: ObjectId,
-  name: String,
-  color: String (hex),
-  type: 'income' | 'expense',
-  budget: Number,
-  icon: String,
-  isDefault: Boolean
-}
-```
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-### Bank Account
-```javascript
-{
-  user: ObjectId,
-  name: String,
-  type: 'checking' | 'savings' | 'credit' | 'investment' | 'loan',
-  balance: Number,
-  currency: String,
-  isConnected: Boolean,
-  bankName: String
-}
-```
+3. **Create environment file**:
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Configure your environment variables** in `.env`
+
+5. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+
+The API will be available at `http://localhost:3000`
 
 ## Security Features
 
 - **Password Hashing**: bcryptjs with configurable salt rounds
 - **JWT Authentication**: Secure token-based authentication
-- **Rate Limiting**: Prevents API abuse
+- **Rate Limiting**: Prevents API abuse (100 requests per 15 minutes)
 - **Input Validation**: Comprehensive request validation
 - **CORS**: Configurable cross-origin resource sharing
 - **Helmet**: Security headers middleware
+- **Environment Variables**: Secure configuration management
 
 ## Error Handling
 
@@ -208,51 +215,43 @@ Common HTTP status codes:
 - `201` - Created
 - `400` - Bad Request (validation errors)
 - `401` - Unauthorized
+- `403` - Forbidden (CORS)
 - `404` - Not Found
 - `500` - Internal Server Error
 
-## Development
+## Monitoring
 
-### Running Tests
-```bash
-npm test
-```
+- **Health Check**: Visit `/api/health` to check server status
+- **Vercel Analytics**: Built-in monitoring in Vercel dashboard
+- **MongoDB Atlas Monitoring**: Database performance metrics
 
-### Code Structure
-```
-src/
-├── models/          # Mongoose models
-├── routes/          # Express route handlers
-├── middleware/      # Custom middleware
-├── utils/           # Utility functions
-└── index.js         # Application entry point
-```
+## Troubleshooting
 
-### Health Check
+### Common Issues
 
-Visit `http://localhost:3001/health` to check server status and configuration.
+1. **CORS Errors**:
+   - Ensure `FRONTEND_URL` environment variable is set correctly
+   - Check that your frontend domain is in the allowed origins list
 
-## Deployment
+2. **Database Connection Issues**:
+   - Verify MongoDB connection string is correct
+   - Ensure database user has proper permissions
+   - Check that IP whitelist includes `0.0.0.0/0`
 
-### Environment Variables for Production
-```env
-NODE_ENV=production
-MONGODB_URI=mongodb+srv://...
-JWT_SECRET=secure-production-secret
-OPENAI_API_KEY=sk-...
-FRONTEND_URL=https://your-frontend-domain.com
-```
+3. **Environment Variables Not Loading**:
+   - Verify variables are set in Vercel dashboard
+   - Redeploy after adding new environment variables
 
-### Docker Support
-```dockerfile
-FROM node:16-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 3001
-CMD ["npm", "start"]
-```
+4. **Rate Limiting Issues**:
+   - Adjust `RATE_LIMIT_MAX_REQUESTS` if needed
+   - Consider implementing user-specific rate limiting
+
+### Logs
+
+View logs in Vercel Dashboard:
+1. Go to your project
+2. Click on "Functions" tab
+3. Click on any function execution to view logs
 
 ## Contributing
 
@@ -265,3 +264,7 @@ CMD ["npm", "start"]
 ## License
 
 MIT License - see LICENSE file for details
+
+## Support
+
+For support, email support@budge.app or create an issue in the repository.
