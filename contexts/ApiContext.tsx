@@ -16,10 +16,10 @@ const getApiUrl = () => {
   }
 
   // Final fallback (localhost)
-  return 'https://server-samuelosoba-samuels-projects-e534d71a.vercel.app//api';
+  return 'http://localhost:3000/api';
 };
 
-const API_BASE_URL ="https://92b2-197-211-59-52.ngrok-free.app/api";
+const API_BASE_URL ="https://server-samuelosoba-samuels-projects-e534d71a.vercel.app//api";
 
 interface ApiContextType {
   apiCall: (endpoint: string, options?: RequestInit) => Promise<any>;
