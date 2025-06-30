@@ -39,7 +39,7 @@ export default {
     },
     extra: {
       EXPO_PUBLIC_API_URL:"https://d7c7-197-211-59-52.ngrok-free.app/api",
-      EXPO_PUBLIC_REVENUECAT_API_KEY: "goog_OwQUxxbXXDcwGkmUWWwIcWMBaEV",
+      EXPO_PUBLIC_REVENUECAT_API_KEY:"goog_OwQUxxbXXDcwGkmUWWwIcWMBaEV",
       eas: {
         projectId: "07fe8602-893a-4994-a6fe-4cc04acafbce"
       }
