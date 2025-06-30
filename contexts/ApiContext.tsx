@@ -19,7 +19,7 @@ const getApiUrl = () => {
   return 'http://localhost:3000/api';
 };
 
-const API_BASE_URL ="https://server-samuelosoba-samuels-projects-e534d71a.vercel.app//api";
+const API_BASE_URL ="https://server-samuelosoba-samuels-projects-e534d71a.vercel.app/api";
 
 interface ApiContextType {
   apiCall: (endpoint: string, options?: RequestInit) => Promise<any>;
