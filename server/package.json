@@ -2,7 +2,7 @@
   "name": "budge-backend",
   "version": "1.0.0",
   "description": "Backend API for Budge budgeting app",
-  "main": "src/index.js",
+  "main": "api/index.js",
   "engines": {
     "node": ">=18.0.0"
   },
